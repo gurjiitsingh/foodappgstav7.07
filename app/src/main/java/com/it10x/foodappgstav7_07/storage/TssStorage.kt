@@ -33,4 +33,15 @@ object TssStorage {
     fun clear(context: Context) {
         prefs(context).edit().clear().apply()
     }
+
+    fun saveClientId(context: Context, clientId: String) {
+        val prefs = context.getSharedPreferences("fiskaly_prefs", Context.MODE_PRIVATE)
+        prefs.edit().putString("client_id", clientId).apply()
+    }
+
+    fun getClientId(context: Context): String? {
+        val prefs = context.getSharedPreferences("fiskaly_prefs", Context.MODE_PRIVATE)
+        return prefs.getString("client_id", null)
+    }
+
 }

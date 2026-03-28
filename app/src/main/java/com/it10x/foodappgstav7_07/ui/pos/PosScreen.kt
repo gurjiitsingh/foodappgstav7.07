@@ -138,7 +138,7 @@ fun PosScreen(
 
 
 
-    val posViewModel: PosViewModel = viewModel()
+ //   val posViewModel: PosViewModel = viewModel()
 
     LaunchedEffect(Unit) {
         cartViewModel.uiEvent.collect { event ->

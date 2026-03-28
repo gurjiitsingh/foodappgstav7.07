@@ -12,21 +12,53 @@ class FiskalyRepository(
     private val api: FiskalyApi
 ) {
 
+
+    private suspend fun ensureAuthenticated() {
+
+        var token = TokenManager.getToken()
+
+        if (token.isNullOrEmpty()) {
+
+            Log.d("FISKALY", "🔑 Token missing → authenticating")
+
+            val newToken = FiskalyAuthService.authenticate(api)
+
+            TokenManager.saveToken(newToken)
+
+            Log.d("FISKALY", "✅ Token saved")
+        }
+    }
+
     suspend fun startTransaction(): Pair<String, String> {
+
+        ensureAuthenticated()
         val tssId = TssStorage.getTssId(context)
             ?: throw Exception("TSS not initialized")
 
-        val clientId = UUID.randomUUID().toString()
         val txId = UUID.randomUUID().toString()
+//        delay(300)
 
-        // ✅ Create client
-        api.createClient(
-            tssId,
-            clientId,
-            ClientRequest(serial_number = clientId)
-        )
+        var clientId = TssStorage.getClientId(context)
 
-        delay(300)
+        if (clientId == null) {
+
+            clientId = UUID.randomUUID().toString()
+
+            api.createClient(
+                tssId,
+                clientId,
+                ClientRequest(serial_number = clientId)
+            )
+
+            TssStorage.saveClientId(context, clientId)
+
+            Log.d("FISKALY", "✅ NEW CLIENT CREATED: $clientId")
+
+            delay(300)
+
+        } else {
+            Log.d("FISKALY", "♻️ REUSING CLIENT: $clientId")
+        }
 
         // ✅ Start TX
         api.startTransaction(
