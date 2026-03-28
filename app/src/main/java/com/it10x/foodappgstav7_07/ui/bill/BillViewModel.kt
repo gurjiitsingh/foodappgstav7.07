@@ -44,7 +44,13 @@ import com.it10x.foodappgstav7_07.data.pos.repository.KotRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.update
 import com.it10x.foodappgstav7_07.data.pos.manager.TableSyncManager
+import com.it10x.foodappgstav7_07.network.fiskaly.FiskalyClient
+import com.it10x.foodappgstav7_07.network.fiskaly.FiskalyRepository
+import com.it10x.foodappgstav7_07.network.model.ClientRequest
+import com.it10x.foodappgstav7_07.network.model.StartTransactionRequest
+import com.it10x.foodappgstav7_07.storage.TssStorage
 import com.it10x.foodappgstav7_07.utils.MoneyUtils
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import java.math.BigDecimal
@@ -68,7 +74,8 @@ class BillViewModel(
     private val ledgerDao: PosCustomerLedgerDao,
     private val kotRepository: KotRepository,
     private val cashierOrderSyncRepository: CashierOrderSyncRepository,
-    private val tableSyncManager: TableSyncManager
+    private val tableSyncManager: TableSyncManager,
+    private val fiskalyRepository: FiskalyRepository
 ) : ViewModel() {
 
     // --------------------------------------------------------
@@ -385,19 +392,7 @@ class BillViewModel(
                     }
                     .toLong()   // ✅ ONLY ONE ROUNDING HERE
 
-//                val taxTotalPaise = kotItems.sumOf {
-//
-//                    if (it.taxType == "exclusive") {
-//
-//                        val basePaise = MoneyUtils.toPaise(it.basePrice)
-//
-//                        val taxPerItem =
-//                            ((basePaise * it.taxRate) / 100.0).roundToLong()
-//
-//                      taxPerItem * it.quantity
-//
-//                    } else 0L
-//                }
+
 
             val now = System.currentTimeMillis()
             val orderId = UUID.randomUUID().toString()
@@ -576,6 +571,8 @@ class BillViewModel(
                 if (payments.size > 1) "MIXED"
                 else payments.firstOrNull()?.mode ?: "CREDIT"
 
+
+
             // ===========================
             // ORDER MASTER
             // ===========================
@@ -651,8 +648,6 @@ class BillViewModel(
 
                         val finalTotal = (subtotal + taxTotalItem).round(2)
 
-
-
                          PosOrderItemEntity(
                             id = UUID.randomUUID().toString(),
 
@@ -694,12 +689,10 @@ class BillViewModel(
                         )
                     }
 
-
+                val (txId, clientId) = fiskalyRepository.startTransaction()
                 withContext(Dispatchers.IO) {
-
                     Log.d("TAX_DEBUG", "FINAL TAX PAISE (WRONG): $taxTotalPaise")
                     Log.d("TAX_DEBUG", "FINAL TAX DOUBLE: ${MoneyUtils.fromPaise(taxTotalPaise)}")
-
                 orderMasterDao.insert(orderMaster)
                 orderProductDao.insertAll(orderItems)
 
@@ -742,6 +735,17 @@ class BillViewModel(
                         Log.e("TABLE_SYNC", "❌ Failed to clear table", e)
                     }
             }
+
+
+                // ✅ ONLY AFTER SUCCESS
+                fiskalyRepository.finishTransaction(
+                    txId = txId,
+                    clientId = clientId,
+                    totalAmount = MoneyUtils.fromPaise(grandTotalPaise),
+                    paymentType = paymentMode
+                )
+
+                Log.d("FISKALY", "✅ TX FINISHED: $txId")
 
             printOrder(orderMaster, orderItems)
                 sendEvent("Payment successful")

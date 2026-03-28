@@ -9,7 +9,8 @@ import com.it10x.foodappgstav7_07.data.pos.AppDatabaseProvider
 import com.it10x.foodappgstav7_07.data.pos.manager.TableSyncManager
 import com.it10x.foodappgstav7_07.data.pos.repository.*
 import com.it10x.foodappgstav7_07.printer.PrinterManager
-
+import com.it10x.foodappgstav7_07.network.fiskaly.FiskalyRepository
+import com.it10x.foodappgstav7_07.network.fiskaly.FiskalyClient
 class BillViewModelFactory(
     private val application: Application,
     private val tableId: String,
@@ -71,6 +72,14 @@ class BillViewModelFactory(
             )
 
             // -----------------------------
+// FISKALY
+// -----------------------------
+            val fiskalyRepository = FiskalyRepository(
+                context = application.applicationContext,
+                api = FiskalyClient.api
+            )
+
+            // -----------------------------
             // FIRESTORE
             // -----------------------------
 
@@ -99,7 +108,8 @@ class BillViewModelFactory(
                 ledgerDao = db.posCustomerLedgerDao(),
                 kotRepository = kotRepository,
                 cashierOrderSyncRepository = cashierOrderSyncRepository,
-                tableSyncManager = tableSyncManager
+                tableSyncManager = tableSyncManager,
+                fiskalyRepository = fiskalyRepository
             ) as T
         }
 
