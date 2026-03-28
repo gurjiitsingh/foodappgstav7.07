@@ -16,10 +16,12 @@ import retrofit2.Response
 
 import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.PATCH
 import retrofit2.http.PUT
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface FiskalyApi {
 
@@ -60,44 +62,42 @@ interface FiskalyApi {
     ): TseResponse
 
 
-    // CLIENT REGISTRATION (still under tse/v1)
-    @POST("tse/v1/clients")
+
+    @PUT("tss/{tssId}/client/{clientId}")
     suspend fun createClient(
+        @Path("tssId") tssId: String,
+        @Path("clientId") clientId: String,
         @Body request: ClientRequest
     ): ClientResponse
 
 
-    // START TRANSACTION
-    @POST("tse/v1/transactions")
+    // ✅ START TRANSACTION (CREATE → revision = 1)
+    @PUT("tss/{tssId}/tx/{txId}")
     suspend fun startTransaction(
+        @Path("tssId") tssId: String,
+        @Path("txId") txId: String,
+        @Query("tx_revision") txRevision: Int, // 🔥 REQUIRED
         @Body request: StartTransactionRequest
     ): TransactionResponse
 
 
-    // FINISH TRANSACTION
-    @PATCH("tse/v1/transactions/{transactionId}")
+    // ✅ FINISH TRANSACTION (UPDATE → revision 2+)
+    @PUT("tss/{tssId}/tx/{txId}")
     suspend fun finishTransaction(
-        @Path("transactionId") transactionId: String,
+        @Path("tssId") tssId: String,
+        @Path("txId") txId: String,
+        @Query("tx_revision") txRevision: Int,
         @Body request: FinishTransactionRequest
     ): TransactionResponse
 
 
+
+
     // EXPORT DATA
-    @POST("tse/v1/exports")
+    @POST("tse/v2/exports")
     suspend fun createExport(): ExportResponse
 
 
-    fun buildProcessData(amount: Double): String {
-        return """
-    {
-      "receipt": {
-        "type": "receipt",
-        "amount": ${amount.toInt()},
-        "currency": "EUR"
-      }
-    }
-    """.trimIndent()
-    }
 
 
 
@@ -116,19 +116,7 @@ interface FiskalyApi {
     ): Response<Unit>
 
 
-    fun buildFinishRequest(amount: Double): FinishTransactionRequest {
-        return FinishTransactionRequest(
-            process_data = """
-            {
-              "receipt": {
-                "type": "receipt",
-                "amount": ${amount.toInt()},
-                "currency": "EUR"
-              }
-            }
-            """.trimIndent()
-        )
-    }
+
 
 }
 

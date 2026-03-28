@@ -6,7 +6,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object FiskalyAuthClient {
 
-    private const val BASE_URL = "https://auth.fiskaly.com/v1/"
+    private const val BASE_URL = "https://auth.fiskaly.com/v2/"
 
     val api: FiskalyApi by lazy {
 

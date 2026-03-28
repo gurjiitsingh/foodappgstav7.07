@@ -256,6 +256,39 @@ class CartViewModel(
     }
 
 
+//    fun initSession(orderType: String, tableId: String? = null) {
+//
+//        val resolvedTableId = when (orderType) {
+//            "DINE_IN" -> tableId
+//            "TAKEAWAY" -> tableId
+//            "DELIVERY" -> tableId
+//            else -> null
+//        }
+//
+//
+//        if (resolvedTableId.isNullOrBlank()) {
+//            Log.e("CART_DEBUG", "initSession FAILED: tableId null for $orderType")
+//            return
+//        }
+//
+//        // ✅ PREVENT DUPLICATE SESSION CREATION
+//        if (
+//            sessionId.value != null &&
+//            currentOrderType.value == orderType &&
+//            currentTableId.value == resolvedTableId
+//        ) {
+//           // Log.d("CART_DEBUG", "initSession skipped (already active)")
+//            return
+//        }
+//
+//        val sid = "$orderType-$resolvedTableId-${System.currentTimeMillis()}"
+//
+//
+//        savedStateHandle["orderType"] = orderType
+//        savedStateHandle["tableId"] = resolvedTableId
+//        savedStateHandle["sessionId"] = sid
+//    }
+
     fun initSession(orderType: String, tableId: String? = null) {
 
         val resolvedTableId = when (orderType) {
@@ -265,31 +298,44 @@ class CartViewModel(
             else -> null
         }
 
-
         if (resolvedTableId.isNullOrBlank()) {
             Log.e("CART_DEBUG", "initSession FAILED: tableId null for $orderType")
             return
         }
 
-        // ✅ PREVENT DUPLICATE SESSION CREATION
+        // ✅ PREVENT DUPLICATE SESSION
         if (
             sessionId.value != null &&
             currentOrderType.value == orderType &&
             currentTableId.value == resolvedTableId
         ) {
-           // Log.d("CART_DEBUG", "initSession skipped (already active)")
             return
         }
 
         val sid = "$orderType-$resolvedTableId-${System.currentTimeMillis()}"
 
-
         savedStateHandle["orderType"] = orderType
         savedStateHandle["tableId"] = resolvedTableId
         savedStateHandle["sessionId"] = sid
+
+        // 🔥🔥🔥 ADD THIS BLOCK (THIS WAS MISSING)
+//        viewModelScope.launch {
+//
+//            Log.d("FISKALY", "initSession → calling Fiskaly")
+//
+//            if (!fiskalyService.isEnabled()) {
+//                Log.d("FISKALY", "Fiskaly disabled, skipping")
+//                return@launch
+//            }
+//
+//            val txnId = fiskalyService.startTransaction(
+//                sessionId = sid,
+//                amount = 0.0
+//            )
+//
+//            Log.d("FISKALY", "Transaction started: $txnId")
+//        }
     }
-
-
 
     private fun cartScopeKey(): String? {
         return when (currentOrderType.value) {

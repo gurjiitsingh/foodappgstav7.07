@@ -12,7 +12,7 @@ class BearerInterceptor : Interceptor {
         val original = chain.request()
 
         val token = TokenManager.getToken()
-
+        Log.d("FISKALY", "Token in bearer = ${TokenManager.getToken()}")
         val requestBuilder = original.newBuilder()
 
         if (!token.isNullOrEmpty()) {

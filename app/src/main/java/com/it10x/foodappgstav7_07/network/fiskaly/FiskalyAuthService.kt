@@ -10,8 +10,8 @@ object FiskalyAuthService {
 
         val response = api.authenticate(
             AuthRequest(
-                api_key = "test_cknta59sju6xr6elmxdhxgp3m_test-german",
-                api_secret = "SlDVHFx355axCFF18CjbSBDOvPA7CqJPVtlTxjQbTK2"
+                api_key = "test_ba6mebcylsqgci25j6nx3pcqs_german-2",
+                api_secret = "z1HdFZGPAhlvCWt0avK0zbyUvKoqwNu1h9S1UnCJTK8"
             )
         )
 

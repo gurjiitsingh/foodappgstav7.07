@@ -39,7 +39,7 @@ object FiskalyClient {
 
             override fun loadForRequest(url: HttpUrl): List<Cookie> {
                 val cookies = cookieStore[url.host] ?: emptyList()
-                Log.d("COOKIE", "Loaded: $cookies")
+            //    Log.d("FISKALY", "Sending cookies: $cookies") // 🔥 ADD THIS
                 return cookies
             }
         }

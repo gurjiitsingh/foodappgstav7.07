@@ -1,11 +1,29 @@
 package com.it10x.foodappgstav7_07.network.model
 
-data class FinishTransactionRequest(
-    val process_type: String = "Kassenbeleg-V1",
-    val process_data: String,
-    val state: String = "FINISHED"
+
+data class PaymentAmount(
+    val payment_type: String,
+    val amount: String
+)
+data class VatAmount(
+    val vat_rate: String,
+    val amount: String
 )
 
-//data class FinishTransactionRequest(
-//    val state: String = "FINISHED"
-//)
+data class Receipt(
+    val receipt_type: String = "RECEIPT",
+    val amounts_per_vat_rate: List<VatAmount>,
+    val amounts_per_payment_type: List<PaymentAmount>
+)
+data class StandardV1(
+    val receipt: Receipt
+)
+data class Schema(
+    val standard_v1: StandardV1
+)
+data class FinishTransactionRequest(
+    val state: String = "FINISHED",
+    val client_id: String,
+    val schema: Schema
+)
+

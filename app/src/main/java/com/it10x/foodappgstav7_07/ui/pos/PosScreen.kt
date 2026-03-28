@@ -62,6 +62,7 @@ import com.it10x.foodappgstav7_07.data.pos.viewmodel.ProductsLocalViewModelFacto
 import com.it10x.foodappgstav7_07.ui.components.PosTouchKeyboard
 import com.it10x.foodappgstav7_07.ui.components.PosTouchKeyboardCompact
 import com.it10x.foodappgstav7_07.ui.components.TouchKeyboardPhone
+import com.it10x.foodappgstav7_07.viewmodel.PosViewModel
 import com.it10x.foodappgstav7_07.viewmodel.VirtualTableViewModel
 
 
@@ -137,6 +138,7 @@ fun PosScreen(
 
 
 
+    val posViewModel: PosViewModel = viewModel()
 
     LaunchedEffect(Unit) {
         cartViewModel.uiEvent.collect { event ->
