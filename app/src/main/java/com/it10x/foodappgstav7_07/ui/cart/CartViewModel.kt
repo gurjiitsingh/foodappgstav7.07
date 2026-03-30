@@ -46,9 +46,9 @@ class CartViewModel(
 //val country = ClientConfigStorage.getCountry(context)
 
 
-    private val fiskalyService: FiskalyService by lazy {
-        FiskalyServiceFactory.create(app, "DE")
-    }
+//    private val fiskalyService: FiskalyService by lazy {
+//        FiskalyServiceFactory.create(app, "DE")
+//    }
 
 
 

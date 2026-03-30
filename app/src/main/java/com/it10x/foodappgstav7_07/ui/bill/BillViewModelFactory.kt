@@ -9,7 +9,7 @@ import com.it10x.foodappgstav7_07.data.pos.AppDatabaseProvider
 import com.it10x.foodappgstav7_07.data.pos.manager.TableSyncManager
 import com.it10x.foodappgstav7_07.data.pos.repository.*
 import com.it10x.foodappgstav7_07.printer.PrinterManager
-import com.it10x.foodappgstav7_07.network.fiskaly.FiskalyRepository
+import com.it10x.foodappgstav7_07.fiskaly.FiskalyRepository
 import com.it10x.foodappgstav7_07.network.fiskaly.FiskalyClient
 class BillViewModelFactory(
     private val application: Application,

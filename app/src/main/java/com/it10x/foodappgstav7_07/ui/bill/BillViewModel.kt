@@ -44,10 +44,15 @@ import com.it10x.foodappgstav7_07.data.pos.repository.KotRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.update
 import com.it10x.foodappgstav7_07.data.pos.manager.TableSyncManager
+import com.it10x.foodappgstav7_07.fiscal.FiscalContext
+import com.it10x.foodappgstav7_07.fiscal.FiscalService
+import com.it10x.foodappgstav7_07.fiscal.getFiscalService
 import com.it10x.foodappgstav7_07.network.fiskaly.FiskalyClient
-import com.it10x.foodappgstav7_07.network.fiskaly.FiskalyRepository
+import com.it10x.foodappgstav7_07.fiskaly.FiskalyRepository
 import com.it10x.foodappgstav7_07.network.model.ClientRequest
+import com.it10x.foodappgstav7_07.network.model.PaymentAmount
 import com.it10x.foodappgstav7_07.network.model.StartTransactionRequest
+import com.it10x.foodappgstav7_07.network.model.VatAmount
 import com.it10x.foodappgstav7_07.storage.TssStorage
 import com.it10x.foodappgstav7_07.utils.MoneyUtils
 import kotlinx.coroutines.delay
@@ -362,7 +367,20 @@ class BillViewModel(
                 return@launch
             }
             _isProcessing.value = true
+
+            val outlet = outletDao.getOutlet()
+                ?: error("Outlet not configured")
+
+            lateinit var fiscalService: FiscalService
+            lateinit var fiscalContext: FiscalContext
+
+
+
+
             try {
+
+
+
             val inputPhone = phone.trim()
             val inputName = name.trim().ifBlank { "Customer" }
 
@@ -373,6 +391,7 @@ class BillViewModel(
                     sendEvent("No items to bill")
                     return@launch
                 }
+
 
           //  val itemSubtotal = kotItems.sumOf { it.basePrice * it.quantity }
                 val itemSubtotalPaise =
@@ -397,8 +416,7 @@ class BillViewModel(
             val now = System.currentTimeMillis()
             val orderId = UUID.randomUUID().toString()
 
-            val outlet = outletDao.getOutlet()
-                ?: error("Outlet not configured")
+
 
             val srno = orderSequenceRepository.nextOrderNo(
                 outletId = outlet.outletId,
@@ -449,10 +467,6 @@ class BillViewModel(
                 }
 
 
-//                Log.d("PAY_DEBUG", "hasPaid = $hasPaid")
-//                Log.d("PAY_DEBUG", "creditPaiseInput = $creditPaiseInput")
-//                Log.d("PAY_DEBUG", "paymentStatus = $paymentStatus")
-
 // 👇 THEN use it
 
 
@@ -476,6 +490,10 @@ class BillViewModel(
                     sendEvent("Phone required for credit sale")
                     return@launch
                 }
+
+
+
+
 
 
   // ===========================
@@ -689,7 +707,14 @@ class BillViewModel(
                         )
                     }
 
-                val (txId, clientId) = fiskalyRepository.startTransaction()
+               // val (txId, clientId) = fiskalyRepository.startTransaction()
+                //fiscalService = getFiscalService(outlet.country!!, fiskalyRepository)
+                fiscalService = getFiscalService("DE", fiskalyRepository)
+                fiscalContext = withContext(Dispatchers.IO) {
+                    fiscalService.start()
+                }
+
+
                 withContext(Dispatchers.IO) {
                     Log.d("TAX_DEBUG", "FINAL TAX PAISE (WRONG): $taxTotalPaise")
                     Log.d("TAX_DEBUG", "FINAL TAX DOUBLE: ${MoneyUtils.fromPaise(taxTotalPaise)}")
@@ -737,24 +762,37 @@ class BillViewModel(
             }
 
 
+                //FISKLAY CODE
                 // ✅ ONLY AFTER SUCCESS
-                fiskalyRepository.finishTransaction(
-                    txId = txId,
-                    clientId = clientId,
-                    totalAmount = MoneyUtils.fromPaise(grandTotalPaise),
-                    paymentType = paymentMode
-                )
+                withContext(Dispatchers.IO) {
+                    fiscalService.finish(
+                        fiscalContext,
+                        payments,
+                        kotItems
+                    )
+                }
+//FISCLAY CODE END
 
-                Log.d("FISKALY", "✅ TX FINISHED: $txId")
 
             printOrder(orderMaster, orderItems)
                 sendEvent("Payment successful")
 
             resetBillUi()
             } catch (e: Exception) {
+
+//                if (::fiscalService.isInitialized && ::fiscalContext.isInitialized) {
+//                    withContext(Dispatchers.IO) {
+//                        fiscalService.cancel(fiscalContext)
+//                    }
+//                }
+
+               // if (!isFinished) {
+                    fiscalService.cancel(fiscalContext)
+               // }
+
                 Log.e("PAY_ERROR", "Payment failed", e)
                 sendEvent("Payment failed")
-            } finally {
+            }finally {
                 _isProcessing.value = false
             }
 
