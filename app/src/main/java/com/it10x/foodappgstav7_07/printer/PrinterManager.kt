@@ -15,6 +15,9 @@ import com.it10x.foodappgstav7_07.data.pos.AppDatabaseProvider
 import com.it10x.foodappgstav7_07.data.pos.entities.PosKotItemEntity
 import com.it10x.foodappgstav7_07.ui.sales.SalesUiState
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
+
 
 class PrinterManager(
     private val context: Context
@@ -92,7 +95,7 @@ class PrinterManager(
     text: String,
     onResult: (Boolean) -> Unit = {}
 ) {
-      //  Log.e("PRINT", "printer configured for role=$role")
+
         Log.e(
             "PRINTTEST",
             "\n================= printText =================\n$text\n=================================================="
@@ -151,6 +154,22 @@ class PrinterManager(
     }
 }
 
+    suspend fun printTextNewSuspend(
+        role: PrinterRole,
+        order: PrintOrder
+    ): Boolean = suspendCancellableCoroutine { cont ->
+
+        cont.invokeOnCancellation {
+            // Optional: cancel printer job if you support it
+            Log.e("PRINT", "Coroutine cancelled")
+        }
+
+        printTextNew(role, order) { success ->
+            if (cont.isActive) {
+                cont.resume(success)
+            }
+        }
+    }
 
     fun printTextNew(
         role: PrinterRole,

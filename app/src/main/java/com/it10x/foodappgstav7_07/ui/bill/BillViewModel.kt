@@ -709,7 +709,7 @@ class BillViewModel(
 
                // val (txId, clientId) = fiskalyRepository.startTransaction()
                 //fiscalService = getFiscalService(outlet.country!!, fiskalyRepository)
-                fiscalService = getFiscalService("DE", fiskalyRepository)
+                fiscalService = getFiscalService("IN", fiskalyRepository)
                 fiscalContext = withContext(Dispatchers.IO) {
                     fiscalService.start()
                 }
@@ -855,9 +855,10 @@ class BillViewModel(
         val outlet = outletDao.getOutlet()
         val outletInfo = OutletMapper.fromEntity(outlet)
 
-        printerManager.printTextNew(PrinterRole.BILLING, printOrder)
-        Log.d("PRINT_ORDER", "Receipt printed successfully | orderNo=${order.srno}")
-    }
+       // printerManager.printTextNew(PrinterRole.BILLING, printOrder)
+        printerManager.printTextNewSuspend(PrinterRole.BILLING, printOrder)
+      //  Log.d("PRINT_ORDER", "Receipt printed successfully | orderNo=${order.srno}")
+          }
 
 
     fun getDoneItems(orderRef: String, orderType: String): Flow<List<PosKotItemEntity>> {

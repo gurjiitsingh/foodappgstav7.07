@@ -8,7 +8,8 @@ import com.it10x.foodappgstav7_07.ui.payment.PaymentInput
 class IndiaFiscalService : FiscalService {
 
     override suspend fun start(): FiscalContext {
-        return FiscalContext(null, null)
+      //  return FiscalContext(null, null)
+        return FiscalContext("IN", "NOOP")
     }
 
     override suspend fun finish(
