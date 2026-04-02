@@ -70,6 +70,7 @@ import com.it10x.foodappgstav7_07.ui.orders.history.OrderItemsScreen
 import com.it10x.foodappgstav7_07.ui.pos.PosSessionViewModel
 import com.it10x.foodappgstav7_07.ui.pos.customer.CustomerAddressScreen
 import com.it10x.foodappgstav7_07.ui.reports.CategorySalesScreen
+import com.it10x.foodappgstav7_07.ui.reports.TotalSalesReportScreen
 
 import com.it10x.foodappgstav7_07.ui.sales.SalesScreen
 import com.it10x.foodappgstav7_07.ui.sales.SalesViewModel
@@ -402,7 +403,7 @@ fun NavigationHost(
         }
 
 // ---------------- SALES ----------------
-        // ---------------- SALES ----------------
+
         composable("sales") {
 
             val context = LocalContext.current
@@ -418,8 +419,43 @@ fun NavigationHost(
             SalesScreen(
                 viewModel = salesViewModel,
                 onBack = { navController.popBackStack() },
-                onHistoryReport = { navController.navigate("category_sales") }
+              //  onHistoryReport = { navController.navigate("category_sales") }
+                onHistoryReport = { navController.navigate("total_sales") }
             )
+        }
+
+        composable("category_sales") {
+
+            val context = LocalContext.current
+
+            val reportsViewModel: OnlineReportsViewModel = viewModel(
+                factory = OnlineReportsViewModelFactory(
+                    context.applicationContext as Application
+                )
+            )
+
+            CategorySalesScreen(
+                navController = navController,
+                viewModel = reportsViewModel
+            )
+        }
+
+        composable("total_sales") {
+
+            val context = LocalContext.current
+
+            val reportsViewModel: OnlineReportsViewModel = viewModel(
+                factory = OnlineReportsViewModelFactory(
+                    context.applicationContext as Application
+                )
+            )
+
+            TotalSalesReportScreen(
+                viewModel = reportsViewModel,
+                onBack = { navController.popBackStack() },
+                onHistoryCategoryReport =  { navController.navigate("category_sales") }
+            )
+
         }
 
 
@@ -604,16 +640,6 @@ fun NavigationHost(
             )
         }
 
-        composable("category_sales") {
-
-            val reportsViewModel: OnlineReportsViewModel = viewModel()
-
-            CategorySalesScreen(
-                navController = navController,
-                viewModel = reportsViewModel,
-
-            )
-        }
 
     }
 }

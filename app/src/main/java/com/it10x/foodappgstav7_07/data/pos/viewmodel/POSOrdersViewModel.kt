@@ -128,11 +128,7 @@ class POSOrdersViewModel(
              //   Log.d("OUTLET_PRINT", "phone=${outlet.phone}")
             }
 
-
-
           // ---------------- BILLING PRINT ----------------
-
-
 if(role == "bill") {
     printerManager.printTextNew(PrinterRole.BILLING, printOrder)
 }

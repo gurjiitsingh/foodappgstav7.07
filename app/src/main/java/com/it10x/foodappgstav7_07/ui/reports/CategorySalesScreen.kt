@@ -65,22 +65,7 @@ fun CategorySalesScreen(
     val qty by viewModel.qty.collectAsState()
     val totalSales by viewModel.totalSales.collectAsState()
     val loading by viewModel.loading.collectAsState()
-//    LaunchedEffect(categories) {
-//        if (categories.isNotEmpty() && selectedCategoryId == null) {
-//
-//            val firstCategory = categories.first()
-//
-//            selectedCategoryId = firstCategory.id
-//            selectedCategoryName = firstCategory.name
-//
-//            // 🔥 AUTO LOAD DATA
-//            viewModel.loadCategoryReport(
-//                category = firstCategory.name,
-//                startMillis = startDate,
-//                endMillis = endDate
-//            )
-//        }
-//    }
+
 
     Scaffold  { padding ->
 

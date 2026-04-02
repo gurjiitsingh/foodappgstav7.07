@@ -158,9 +158,10 @@ fun SalesScreen(
                             Text("Summary", style = MaterialTheme.typography.titleMedium)
                             Spacer(Modifier.height(8.dp))
 
-                            SummaryRow("Total Sales", uiState.totalSales)
+                            SummaryRow("Total Before Discount", uiState.totalBeforeDiscount)
+                            SummaryRow("Total Discount", uiState.discountTotal)
+                            SummaryRow("Total Sales (After Discount)", uiState.totalSales)
                             SummaryRow("Tax", uiState.taxTotal)
-                            SummaryRow("Discount", uiState.discountTotal)
 
                             Spacer(Modifier.height(8.dp))
 

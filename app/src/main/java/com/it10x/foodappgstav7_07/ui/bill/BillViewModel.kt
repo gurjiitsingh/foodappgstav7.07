@@ -374,12 +374,7 @@ class BillViewModel(
             lateinit var fiscalService: FiscalService
             lateinit var fiscalContext: FiscalContext
 
-
-
-
             try {
-
-
 
             val inputPhone = phone.trim()
             val inputName = name.trim().ifBlank { "Customer" }
@@ -392,11 +387,9 @@ class BillViewModel(
                     return@launch
                 }
 
-
           //  val itemSubtotal = kotItems.sumOf { it.basePrice * it.quantity }
                 val itemSubtotalPaise =
                     kotItems.sumOf { MoneyUtils.toPaise(it.basePrice) * it.quantity }
-
 
                 val taxTotalPaise = kotItems
                     .filter { it.taxType == "exclusive" }
@@ -410,8 +403,6 @@ class BillViewModel(
                         exactTaxPerItem * it.quantity
                     }
                     .toLong()   // ✅ ONLY ONE ROUNDING HERE
-
-
 
             val now = System.currentTimeMillis()
             val orderId = UUID.randomUUID().toString()
@@ -439,13 +430,9 @@ class BillViewModel(
                 val grandTotalPaise =
                     itemSubtotalPaise - safeDiscountPaise + taxTotalPaise
 
-
-
             // ===========================
             // PAYMENT CALCULATION
             // ===========================
-
-
                 val totalPaidPaise = payments
                     .filter { it.mode in paidModes }
                     .sumOf { it.amount }
@@ -468,22 +455,15 @@ class BillViewModel(
 
 
 // 👇 THEN use it
-
-
                 val duePaise = creditPaiseInput
 
                 val dueAmount = BigDecimal.valueOf(creditPaiseInput, 2)
                     .setScale(2, java.math.RoundingMode.HALF_UP)
                     .toDouble()
 
-
-
             // ===========================
             // PHONE VALIDATION
             // ===========================
-
-
-
 
                 if (paymentStatus in listOf("CREDIT", "PARTIAL") && inputPhone.isBlank())
                  {
@@ -491,12 +471,7 @@ class BillViewModel(
                     return@launch
                 }
 
-
-
-
-
-
-  // ===========================
+// ===========================
 // ENSURE CUSTOMER EXISTS (IF PHONE ENTERED)
 // ===========================
 
@@ -848,7 +823,8 @@ class BillViewModel(
     // --------------------------------------------------------
     private suspend fun printOrder(
         order: PosOrderMasterEntity,
-        items: List<PosOrderItemEntity>
+        items: List<PosOrderItemEntity>,
+
     ) = withContext(Dispatchers.IO) {
         val printOrder = PrintOrderBuilder.build(order, items)
 
@@ -856,7 +832,7 @@ class BillViewModel(
         val outletInfo = OutletMapper.fromEntity(outlet)
 
        // printerManager.printTextNew(PrinterRole.BILLING, printOrder)
-        printerManager.printTextNewSuspend(PrinterRole.BILLING, printOrder)
+        printerManager.printTextNewSuspend(PrinterRole.BILLING, printOrder, outletInfo)
       //  Log.d("PRINT_ORDER", "Receipt printed successfully | orderNo=${order.srno}")
           }
 

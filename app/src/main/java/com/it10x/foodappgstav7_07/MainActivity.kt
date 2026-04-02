@@ -476,6 +476,7 @@ class MainActivity : ComponentActivity() {
                                             navController.navigate("sales") // opens SalesScreen
                                         }
                                     )
+
                                     Divider(
                                         modifier = Modifier
                                             .padding(horizontal = 16.dp)

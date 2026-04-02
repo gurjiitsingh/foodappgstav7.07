@@ -29,6 +29,7 @@ class SalesViewModel(
     private val _fromDate = MutableStateFlow(startOfToday())
     private val _toDate = MutableStateFlow(endOfToday())
 
+    //val result = repo.getTotalSalesReport(startMillis, endMillis)
     init {
         refreshSales()
     }
@@ -54,6 +55,9 @@ class SalesViewModel(
             val total = sales.sumOf { it.grandTotal }
             val taxTotal = sales.sumOf { it.taxTotal }
             val discountTotal = sales.sumOf { it.discountTotal }
+            val totalBeforeDiscount = sales.sumOf {
+                it.grandTotal + it.discountTotal
+            }
 
             val paymentBreakup = sales.groupBy { it.paymentMode }
                 .mapValues { it.value.sumOf { o -> o.grandTotal } }
@@ -98,6 +102,7 @@ class SalesViewModel(
                 isLoading = false,
                 orders = sales,
                 totalSales = total,
+                totalBeforeDiscount = totalBeforeDiscount,
                 taxTotal = taxTotal,
                 discountTotal = discountTotal,
                 paymentBreakup = paymentBreakup,

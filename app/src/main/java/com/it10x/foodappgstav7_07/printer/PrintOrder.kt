@@ -1,5 +1,7 @@
 package com.it10x.foodappgstav7_07.printer
 
+import com.it10x.foodappgstav7_07.data.print.OutletInfo
+
 /**
  * Master print model
  * Used by BOTH:
@@ -36,7 +38,8 @@ data class PrintOrder(
     val deliveryFee: Double = 0.0,
     val tax: Double = 0.0,
     val discount: Double = 0.0,
-    val grandTotal: Double
+    val grandTotal: Double,
+
 )
 
 /**

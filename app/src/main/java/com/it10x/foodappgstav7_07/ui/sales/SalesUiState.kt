@@ -8,6 +8,7 @@ data class SalesUiState(
     val orders: List<PosOrderMasterEntity> = emptyList(),
 
     val totalSales: Double = 0.0,
+    val totalBeforeDiscount: Double = 0.0,
     val taxTotal: Double = 0.0,
     val discountTotal: Double = 0.0,
 
