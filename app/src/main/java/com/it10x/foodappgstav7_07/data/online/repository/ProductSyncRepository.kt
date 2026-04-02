@@ -94,6 +94,7 @@ class ProductSyncRepository(
                 productCat = data["productCat"] as? String
                     ?: error("OrderProductData missing productCat"),
 
+
                 // ------------ VARIANTS ------------
 
                 parentId = data["parentId"] as? String,

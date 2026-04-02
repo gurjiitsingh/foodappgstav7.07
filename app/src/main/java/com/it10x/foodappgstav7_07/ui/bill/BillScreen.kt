@@ -233,41 +233,6 @@ fun BillScreen(
 // =====================================================
 
 
-private fun onPaymentClick(
-
-    viewModel: BillViewModel,
-    context: Context,
-    paymentType: PaymentType,
-    address: DeliveryAddressUiState,
-    onRequireAddress: () -> Unit,
-    onProceed: (PaymentType) -> Unit
-) {
-    if (viewModel.orderTypePublic == "DELIVERY" && !isAddressValid(address)) {
-        onRequireAddress()
-        return
-    }
-
-    if (viewModel.isProcessing.value) {
-        Toast.makeText(context, "Processing...", Toast.LENGTH_SHORT).show()
-        return
-    }
-
-    viewModel.viewModelScope.launch {
-// MODIFY IT TO SEARCH ITEMS FROM CART FROM NOT PANDING IN KOT
-        val hasPending = viewModel.hasPendingKitchenItems()
-
-        if (hasPending) {
-            Toast.makeText(
-                context,
-                "Kitchen items pending. Clear before billing.",
-                Toast.LENGTH_LONG
-            ).show()
-            return@launch
-        }
-
-        onProceed(paymentType)
-    }
-}
 
 
 

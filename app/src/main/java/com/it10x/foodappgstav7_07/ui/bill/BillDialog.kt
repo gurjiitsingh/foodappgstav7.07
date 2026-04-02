@@ -213,7 +213,7 @@ fun BillDialog(
                             onValueChange = {},
                             label = { Text("Customer Phone") },
                             readOnly = true,
-                            enabled = false,
+                            enabled = true,
                             singleLine = true,
                             colors = OutlinedTextFieldDefaults.colors(
                                 disabledContainerColor =
@@ -853,11 +853,10 @@ fun handleInput(
 
 
 
+
+
         "FLAT" -> {
-            when (label) {
-                "←" -> discountFlat.value = discountFlat.value.dropLast(1)
-                else -> discountFlat.value += label
-            }
+            discountFlat.value = handleNumberInput(discountFlat.value, label)
 
             billViewModel.setFlatDiscount(
                 discountFlat.value.toDoubleOrNull() ?: 0.0
@@ -865,10 +864,11 @@ fun handleInput(
         }
 
         "PERCENT" -> {
-            when (label) {
-                "←" -> discountPercent.value = discountPercent.value.dropLast(1)
-                else -> discountPercent.value += label
-            }
+            discountPercent.value = handleNumberInput(
+                current = discountPercent.value,
+                label = label,
+                maxValue = 100.0
+            )
 
             billViewModel.setPercentDiscount(
                 discountPercent.value.toDoubleOrNull() ?: 0.0
@@ -876,10 +876,61 @@ fun handleInput(
         }
 
         "CREDIT" -> {
-            when (label) {
-                "←" -> creditAmount.value = creditAmount.value.dropLast(1)
-                else -> creditAmount.value += label
-            }
+            creditAmount.value = handleNumberInput(creditAmount.value, label)
         }
     }
+}
+
+
+
+fun handleNumberInput(
+    current: String,
+    label: String,
+    allowDecimal: Boolean = true,
+    maxDecimals: Int = 2,
+    maxValue: Double? = null
+): String {
+
+    var value = current
+
+    when (label) {
+
+        "←" -> {
+            if (value.isNotEmpty()) {
+                value = value.dropLast(1)
+            }
+        }
+
+        "." -> {
+            if (!allowDecimal) return value
+
+            if (!value.contains(".")) {
+                value = if (value.isEmpty()) "0." else value + "."
+            }
+        }
+
+        else -> {
+            if (!label.all { it.isDigit() }) return value
+
+            // limit decimals
+            if (value.contains(".")) {
+                val parts = value.split(".")
+                if (parts.size == 2 && parts[1].length >= maxDecimals) {
+                    return value
+                }
+            }
+
+            val newValue = value + label
+
+            // limit max value if needed
+            if (maxValue != null) {
+                val num = newValue.toDoubleOrNull() ?: return value
+                if (num > maxValue) return value
+            }
+
+            value = newValue
+        }
+    }
+
+    return value
 }

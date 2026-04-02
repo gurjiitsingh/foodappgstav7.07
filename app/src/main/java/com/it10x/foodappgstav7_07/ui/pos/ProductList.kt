@@ -35,14 +35,14 @@ fun ProductList(
 
 
     val sessionId by posSessionViewModel.sessionId.collectAsState()
-    val sortedProducts = remember(filteredProducts) {
-        filteredProducts
-            .filter { it.type == "parent" } // ✅ only parent products
-            .sortedBy { it.sortOrder }
-    }
 //    val sortedProducts = remember(filteredProducts) {
-//        filteredProducts.sortedBy { it.sortOrder }
+//        filteredProducts
+//            .filter { it.type == "parent" } // ✅ only parent products
+//            .sortedBy { it.sortOrder }
 //    }
+    val sortedProducts = remember(filteredProducts) {
+        filteredProducts.sortedBy { it.sortOrder }
+    }
 
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = 160.dp),
