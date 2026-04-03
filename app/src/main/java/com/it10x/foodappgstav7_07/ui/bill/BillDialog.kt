@@ -40,7 +40,7 @@ fun BillDialog(
     if (!showBill || sessionId == null) return
 
     val context = LocalContext.current
-    //--------------- PHONE ---------------
+    //--------------- PHONE ---------------if (isProcessing) return@Buttonif (isProcessing) return@Buttonif (isProcessing) return@Button
 
     var activeInput by remember { mutableStateOf<String?>(null) }
     val discountFlat = remember { mutableStateOf("") }
@@ -48,7 +48,7 @@ fun BillDialog(
     val creditAmount = remember { mutableStateOf("") }
     var showRemainingOptions by remember { mutableStateOf(false) }
     var showDiscount by remember { mutableStateOf(false) }
-
+    var isProcessing by remember { mutableStateOf(false) }
 
     val usedPaymentModes = remember { mutableStateListOf<String>() }
     var isCreditSelected by remember { mutableStateOf(false) }
@@ -59,7 +59,8 @@ fun BillDialog(
 
         key = "BillVM_${sessionId}_${orderType}",
         factory = BillViewModelFactory(
-            application = LocalContext.current.applicationContext as Application,
+            application = (LocalContext.current.applicationContext as? Application)
+                ?: throw IllegalStateException("Application not found"),
             tableId = tableId ?: orderType,
             tableName = selectedTableName,
             orderType = orderType
@@ -212,8 +213,8 @@ fun BillDialog(
                             value = uiState.value.customerPhone,
                             onValueChange = {},
                             label = { Text("Customer Phone") },
+                            enabled = false,
                             readOnly = true,
-                            enabled = true,
                             singleLine = true,
                             colors = OutlinedTextFieldDefaults.colors(
                                 disabledContainerColor =
@@ -496,6 +497,10 @@ fun BillDialog(
 
                                             // ✅ Convert EXACT (no rounding)
                                             val parts = input.split(".")
+//                                            if (!input.matches(Regex("""\d+(\.\d{1,2})?"""))) {
+//                                                Toast.makeText(context, "Invalid amount", Toast.LENGTH_SHORT).show()
+//                                                return@IconButton
+//                                            }
                                             val rupees = parts.getOrNull(0)?.toLongOrNull() ?: 0L
                                             val paise = parts.getOrNull(1)?.padEnd(2, '0')?.take(2)?.toLongOrNull() ?: 0L
                                             val enteredPaise = rupees * 100 + paise
@@ -517,10 +522,29 @@ fun BillDialog(
                                             // ✅ FINAL: send raw string to ViewModel
                                             billViewModel.setCreditAmountRaw(input)
 
+                                            val totalPaise = billViewModel.totalPaise
+
+                                            if (enteredPaise == totalPaise) {
+
+                                                // ✅ FULL CREDIT → DIRECT ORDER SUBMIT
+                                                billViewModel.payBill(
+                                                    payments = emptyList(), // no paid modes → CREDIT
+                                                    name = "Customer",
+                                                    phone = uiState.value.customerPhone
+                                                )
+
+                                                onDismiss()
+
+                                            } else {
+
+                                                // ✅ PARTIAL CREDIT → SHOW REMAINING OPTIONS
+                                                showRemainingOptions = true
+                                            }
+
                                             creditAmount.value = ""
                                             activeInput = null
                                             isCreditSelected = false
-                                            showRemainingOptions = true
+                                          //  showRemainingOptions = true
                                         },
                                         modifier = Modifier
                                             .size(42.dp)
@@ -875,9 +899,19 @@ fun handleInput(
             )
         }
 
+
+
+
         "CREDIT" -> {
             creditAmount.value = handleNumberInput(creditAmount.value, label)
         }
+//        "CREDIT" -> {
+//            when (label) {
+//                "←" -> creditAmount.value = creditAmount.value.dropLast(1)
+//                else -> creditAmount.value += label
+//            }
+//        }
+
     }
 }
 

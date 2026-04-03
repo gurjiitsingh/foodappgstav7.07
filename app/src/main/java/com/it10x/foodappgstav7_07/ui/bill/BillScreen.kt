@@ -62,11 +62,9 @@ fun BillScreen(
     var selectedItemQty by remember { mutableStateOf(0) }
 
     val event by viewModel.event.collectAsState()
-    val processing by viewModel.isProcessing.collectAsState()
-
 
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
+
     if (state.loading) {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -207,13 +205,18 @@ fun BillScreen(
             onDismiss = { showQtyDialog = false },
             onConfirm = { newQty ->
                 showQtyDialog = false
-                viewModel.updateItemQuantity(selectedItemId!!, newQty)
+               // viewModel.updateItemQuantity(selectedItemId!!, newQty)
+                selectedItemId?.let {
+                    viewModel.updateItemQuantity(it, newQty)
+                }
             }
         )
     }
     // 🔐 Keep ViewModel updated
-    viewModel.setDeliveryAddress(deliveryAddressState.value)
 
+    LaunchedEffect(deliveryAddressState.value) {
+        viewModel.setDeliveryAddress(deliveryAddressState.value)
+    }
     // ---------------- ADDRESS DIALOG ----------------
     if (showAddressDialog) {
         DeliveryAddressDialog(
@@ -268,26 +271,7 @@ private fun BillRow(label: String, value: Double,currency: String, bold: Boolean
     }
 }
 
-@Composable
-private fun PaymentButton(
-    text: String,
-    isProcessing: Boolean,
-    onClick: () -> Unit
-) {
-    Button(
-        onClick = onClick,
-        enabled = !isProcessing
-    ) {
-        if (isProcessing) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(18.dp),
-                strokeWidth = 2.dp
-            )
-        } else {
-            Text(text)
-        }
-    }
-}
+
 
 // =====================================================
 // DELIVERY ADDRESS DIALOG (FIXED)
@@ -397,13 +381,22 @@ private fun AddressField(
     )
 }
 
+//fun parseModifiers(json: String): List<String> {
+//    return try {
+//        json.removePrefix("[")
+//            .removeSuffix("]")
+//            .split(",")
+//            .map { it.trim().replace("\"", "") }
+//            .filter { it.isNotBlank() }
+//    } catch (e: Exception) {
+//        emptyList()
+//    }
+//}
+
 fun parseModifiers(json: String): List<String> {
     return try {
-        json.removePrefix("[")
-            .removeSuffix("]")
-            .split(",")
-            .map { it.trim().replace("\"", "") }
-            .filter { it.isNotBlank() }
+        val array = org.json.JSONArray(json)
+        List(array.length()) { array.getString(it) }
     } catch (e: Exception) {
         emptyList()
     }

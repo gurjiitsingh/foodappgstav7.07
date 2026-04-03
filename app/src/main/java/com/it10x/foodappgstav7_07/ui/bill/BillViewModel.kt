@@ -391,18 +391,45 @@ class BillViewModel(
                 val itemSubtotalPaise =
                     kotItems.sumOf { MoneyUtils.toPaise(it.basePrice) * it.quantity }
 
-                val taxTotalPaise = kotItems
+//                val taxTotalPaise = kotItems
+//                    .filter { it.taxType == "exclusive" }
+//                    .sumOf {
+//
+//                        val basePaise = MoneyUtils.toPaise(it.basePrice)
+//
+//                        // ❗ exact tax (NO rounding here)
+//                        val exactTaxPerItem = (basePaise * it.taxRate) / 100.0
+//
+//                        exactTaxPerItem * it.quantity
+//                    }
+//                    .toLong()   // ✅ ONLY ONE ROUNDING HERE
+
+                val rawTaxPaise = kotItems
                     .filter { it.taxType == "exclusive" }
                     .sumOf {
-
                         val basePaise = MoneyUtils.toPaise(it.basePrice)
-
-                        // ❗ exact tax (NO rounding here)
                         val exactTaxPerItem = (basePaise * it.taxRate) / 100.0
-
                         exactTaxPerItem * it.quantity
                     }
-                    .toLong()   // ✅ ONLY ONE ROUNDING HERE
+                    .toLong()
+
+                val flatPaise = MoneyUtils.toPaise(_discountFlat.value)
+                val percentPaise =
+                    ((itemSubtotalPaise * _discountPercent.value) / 100.0).roundToLong()
+
+                val discountPaise =
+                    if (flatPaise > 0) flatPaise else percentPaise
+
+                val safeDiscountPaise =
+                    discountPaise.coerceAtMost(itemSubtotalPaise)
+
+                val discountRatio =
+                    if (itemSubtotalPaise == 0L) 0.0
+                    else safeDiscountPaise.toDouble() / itemSubtotalPaise.toDouble()
+
+                val taxAfterDiscountPaise =
+                    (rawTaxPaise * (1 - discountRatio)).roundToLong()
+
 
             val now = System.currentTimeMillis()
             val orderId = UUID.randomUUID().toString()
@@ -417,19 +444,12 @@ class BillViewModel(
                 ).format(Date())
             )
 
-                val flatPaise = MoneyUtils.toPaise(_discountFlat.value)
-                val percentPaise =
-                    ((itemSubtotalPaise * _discountPercent.value) / 100.0).roundToLong()
 
-                val discountPaise =
-                    if (flatPaise > 0) flatPaise else percentPaise
 
-                val safeDiscountPaise =
-                    discountPaise.coerceAtMost(itemSubtotalPaise)
-
+//                val grandTotalPaise =
+//                    itemSubtotalPaise - safeDiscountPaise + taxTotalPaise
                 val grandTotalPaise =
-                    itemSubtotalPaise - safeDiscountPaise + taxTotalPaise
-
+                    itemSubtotalPaise - safeDiscountPaise + taxAfterDiscountPaise
             // ===========================
             // PAYMENT CALCULATION
             // ===========================
@@ -589,7 +609,8 @@ class BillViewModel(
 
                 itemTotal = MoneyUtils.fromPaise(itemSubtotalPaise),
 
-                taxTotal = MoneyUtils.fromPaise(taxTotalPaise),
+               //taxTotal = MoneyUtils.fromPaise(taxTotalPaise),
+                taxTotal = MoneyUtils.fromPaise(taxAfterDiscountPaise),
                 discountTotal = MoneyUtils.fromPaise(safeDiscountPaise),
               //  grandTotal = grandTotal,
                 grandTotal = MoneyUtils.fromPaise(grandTotalPaise),
@@ -691,8 +712,8 @@ class BillViewModel(
 
 
                 withContext(Dispatchers.IO) {
-                    Log.d("TAX_DEBUG", "FINAL TAX PAISE (WRONG): $taxTotalPaise")
-                    Log.d("TAX_DEBUG", "FINAL TAX DOUBLE: ${MoneyUtils.fromPaise(taxTotalPaise)}")
+//                    Log.d("TAX_DEBUG", "FINAL TAX PAISE (WRONG): $taxTotalPaise")
+//                    Log.d("TAX_DEBUG", "FINAL TAX DOUBLE: ${MoneyUtils.fromPaise(taxTotalPaise)}")
                 orderMasterDao.insert(orderMaster)
                 orderProductDao.insertAll(orderItems)
 

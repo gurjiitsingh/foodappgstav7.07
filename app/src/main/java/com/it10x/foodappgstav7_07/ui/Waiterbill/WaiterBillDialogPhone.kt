@@ -25,6 +25,7 @@ import com.it10x.foodappgstav7_07.ui.bill.BillViewModel
 import com.it10x.foodappgstav7_07.ui.bill.BillViewModelFactory
 import com.it10x.foodappgstav7_07.ui.payment.PaymentInput
 import com.it10x.foodappgstav7_07.ui.components.NumPad
+import com.it10x.foodappgstav7_07.utils.MoneyUtils
 import java.util.Locale
 
 @Composable
@@ -235,13 +236,13 @@ fun WaiterBillDialogPhone(
                                     onClick = {
                                         showCloseConfirm = false
 
-//                                        billViewModel.payBill(
-//                                            payments = listOf(
-//                                                PaymentInput("WAITER_PENDING", remainingAmount)
-//                                            ),
-//                                            name = "Customer",
-//                                            phone = uiState.value.customerPhone
-//                                        )
+                                        billViewModel.payBill(
+                                            payments = listOf(
+                                                PaymentInput("WAITER_PENDING", MoneyUtils.toPaise(remainingAmount))
+                                            ),
+                                            name = "Customer",
+                                            phone = uiState.value.customerPhone
+                                        )
 
                                         onDismiss()
                                     },
