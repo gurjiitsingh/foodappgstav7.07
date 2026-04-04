@@ -56,136 +56,270 @@ class GlobalOrderSyncManager(
 
     // -------------------- MAIN POS --------------------
 
-    private fun startMainPosListener() {
-        Log.d("KOT_DEBUG", "startMainPosListener called: role=MAIN")
+//    private fun startMainPosListener() {
+//        Log.d("KOT_DEBUG", "startMainPosListener called: role=MAIN")
+//
+//        // Stop previous listener if any
+//        mainPosListener?.remove()
+//        mainPosListener = null
+//
+//
+//        val now = System.currentTimeMillis()
+//        val cutoff = now - (6 * 60 * 60 * 1000)
+//
+//        mainPosListener = firestore.collection("waiter_orders")
+//            .addSnapshotListener { snapshot, error ->
+//
+//                if (error != null || snapshot == null) return@addSnapshotListener
+//
+//                snapshot.documentChanges.forEach { change ->
+//
+//                    val orderDoc = change.document
+//                    val orderId = orderDoc.id
+//                    val createdAt = orderDoc.getLong("createdAt")
+//                    if (createdAt == null) {
+//                        Log.w("SYNC", "Missing createdAt → skip: $orderId")
+//                        return@forEach
+//                    }
+//
+//                    val orderRef = firestore
+//                        .collection("waiter_orders")
+//                        .document(orderId)
+//
+//                    // ================== ✅ CLEANUP OLD ==================
+//                    if (createdAt < cutoff) {
+//
+//
+//                        // Only delete once (on ADDED)
+//
+//
+//                        scope.launch(Dispatchers.IO) {
+//                                try {
+//                                    val itemsSnapshot = orderRef
+//                                        .collection("items")
+//                                        .get()
+//                                        .await()
+//
+//                                    val batch = firestore.batch()
+//
+//                                    itemsSnapshot.documents.forEach {
+//                                        batch.delete(it.reference)
+//                                    }
+//
+//                                    batch.delete(orderRef)
+//
+//                                    batch.commit().await()
+//
+//                                    Log.d("CLEANUP", "🧹 Deleted old order: $orderId")
+//
+//                                } catch (e: Exception) {
+//                                    Log.e("CLEANUP", "❌ Failed deleting old", e)
+//                                }
+//                            }
+//
+//
+//                        return@forEach
+//                    }
+//
+//                    // ================== ✅ PROCESS ONLY NEW ==================
+//                    if (change.type != DocumentChange.Type.ADDED) return@forEach
+//
+//                    val tableNo = orderDoc.getString("tableNo") ?: ""
+//                    val sessionId = orderDoc.getString("sessionId") ?: ""
+//                    val source = orderDoc.getString("source") ?: "UNKNOWN"
+//
+//                    scope.launch {
+//                        try {
+//
+//                            val insertResult = processedDao.insert(
+//                                ProcessedCloudOrderEntity(
+//                                    orderId = orderId,
+//                                    processedAt = System.currentTimeMillis()
+//                                )
+//                            )
+//
+//                            if (insertResult == -1L) {
+//                                Log.d("SYNC", "Already processed: $orderId")
+//                                return@launch
+//                            }
+//
+//                            val itemsSnapshot = orderRef
+//                                .collection("items")
+//                                .get()
+//                                .await()
+//
+//                            val cartList = itemsSnapshot.documents.map { itemDoc ->
+//                                PosCartEntity(
+//                                    sessionId = sessionId,
+//                                    tableId = tableNo,
+//                                    productId = itemDoc.getString("productId") ?: "",
+//                                    name = itemDoc.getString("productName") ?: "",
+//                                    categoryId = itemDoc.getString("categoryId") ?: "",
+//                                    categoryName = itemDoc.getString("categoryName") ?: "",
+//                                    parentId = null,
+//                                    isVariant = false,
+//                                    basePrice = itemDoc.getDouble("price") ?: 0.0,
+//                                    quantity = (itemDoc.getLong("quantity") ?: 1L).toInt(),
+//                                    taxRate = itemDoc.getDouble("taxRate") ?: 0.0,
+//                                    taxType = "exclusive",
+//                                    note = itemDoc.getString("note") ?: "",
+//                                    modifiersJson = itemDoc.getString("modifiersJson") ?: "",
+//                                    kitchenPrintReq = itemDoc.getBoolean("kitchenPrintReq") ?: true,
+//                                    createdAt = System.currentTimeMillis()
+//                                )
+//                            }
+//
+//                            if (cartList.isEmpty()) return@launch
+//
+//                            kitchenViewModel.saveKotFromFirestoreWaiter(
+//                                orderType = "DINE_IN",
+//                                sessionId = sessionId,
+//                                tableNo = tableNo,
+//                                cartItems = cartList,
+//                                deviceId = "WAITER",
+//                                deviceName = "WAITER",
+//                                appVersion = "WAITER",
+//                                role = "FIRESTORE",
+//                                source = source
+//                            )
+//
+//                            // ✅ delete after processing
+//                            val batch = firestore.batch()
+//
+//                            itemsSnapshot.documents.forEach {
+//                                batch.delete(it.reference)
+//                            }
+//
+//                            batch.delete(orderRef)
+//
+//                            batch.commit().await()
+//
+//                            Log.d("SYNC", "✅ Processed & deleted: $orderId")
+//
+//                        } catch (e: Exception) {
+//                            Log.e("SYNC", "❌ Error: $orderId", e)
+//                        }
+//                    }
+//                }
+//            }
+//    }
+private fun startMainPosListener() {
+    Log.d("KOT_DEBUG", "startMainPosListener called: role=MAIN")
 
-        // Stop previous listener if any
-        mainPosListener?.remove()
-        mainPosListener = null
+    // Stop previous listener if any
+    mainPosListener?.remove()
+    mainPosListener = null
 
-        val now = System.currentTimeMillis()
-        val cutoff = now - (12 * 60 * 60 * 1000)
+    val cutoff = System.currentTimeMillis() - (6 * 60 * 60 * 1000) // 6 hours
 
-        mainPosListener = firestore.collection("waiter_orders")
-            .whereGreaterThan("createdAt", cutoff)
-            .addSnapshotListener { snapshot, error ->
+    mainPosListener = firestore.collection("waiter_orders")
+        .addSnapshotListener { snapshot, error ->
 
-                if (error != null || snapshot == null) return@addSnapshotListener
+            if (error != null || snapshot == null) return@addSnapshotListener
 
-                snapshot.documentChanges.forEach { change ->
+            snapshot.documentChanges.forEach { change ->
+                val orderDoc = change.document
+                val orderId = orderDoc.id
+                val createdAt = orderDoc.getLong("createdAt")
 
-                    // Only handle new documents
-                    if (change.type != DocumentChange.Type.ADDED) return@forEach
+                if (createdAt == null) {
+                    Log.w("SYNC", "Missing createdAt → skip: $orderId")
+                    return@forEach
+                }
 
-                    val orderDoc = change.document
-                    val orderId = orderDoc.id
-                    val tableNo = orderDoc.getString("tableNo") ?: ""
-                    val sessionId = orderDoc.getString("sessionId") ?: ""
-                    val source = orderDoc.getString("source") ?: "UNKNOWN"
+                val orderRef = firestore.collection("waiter_orders").document(orderId)
 
-                    Log.d("KOT_DEBUG", "Processing orderId = $tableNo")
-
+                // ---------------- CLEANUP OLD ORDERS ----------------
+                if (createdAt < cutoff) {
                     scope.launch(Dispatchers.IO) {
                         try {
-                            // 🔐 Strong atomic insert lock
-                            val insertResult = processedDao.insert(
-                                ProcessedCloudOrderEntity(
-                                    orderId = orderId,
-                                    processedAt = System.currentTimeMillis()
-                                )
-                            )
-
-                            if (insertResult == -1L) {
-                                Log.d("SYNC", "Already processed (atomic lock): $orderId")
-                                return@launch
-                            }
-
-                            // Fetch items for this order
-                            val orderRef = firestore
-                                .collection("waiter_orders")
-                                .document(orderId)
-
-                            val itemsSnapshot = orderRef
-                                .collection("items")
-                                .get()
-                                .await()
-
-                            val cartList = itemsSnapshot.documents.map { itemDoc ->
-                                PosCartEntity(
-                                    sessionId = sessionId,
-                                    tableId = tableNo,
-                                    productId = itemDoc.getString("productId") ?: "",
-                                    name = itemDoc.getString("productName") ?: "",
-                                    categoryId = itemDoc.getString("categoryId") ?: "",
-                                    categoryName = itemDoc.getString("categoryName") ?: "",
-                                    parentId = null,
-                                    isVariant = false,
-                                    basePrice = itemDoc.getDouble("price") ?: 0.0,
-                                    quantity = (itemDoc.getLong("quantity") ?: 1L).toInt(),
-                                    taxRate = itemDoc.getDouble("taxRate") ?: 0.0,
-                                    taxType = "exclusive",
-                                    note = itemDoc.getString("note") ?: "",
-                                    modifiersJson = itemDoc.getString("modifiersJson") ?: "",
-                                    kitchenPrintReq = itemDoc.getBoolean("kitchenPrintReq") ?: true,
-                                    createdAt = System.currentTimeMillis()
-                                )
-                            }
-
-                            if (cartList.isEmpty()) {
-                                Log.w("SYNC", "Cart empty for orderId=$orderId")
-                                return@launch
-                            }
-
-                            Log.d("KOT_DEBUG", "In Firestore core Called ${tableNo}")
-
-                            // 🚀 Call ViewModel to process and print KOT
-                            kitchenViewModel.saveKotFromFirestoreWaiter(
-                                orderType = "DINE_IN",
-                                sessionId = sessionId,
-                                tableNo = tableNo,
-                                cartItems = cartList,
-                                deviceId = "WAITER",
-                                deviceName = "WAITER",
-                                appVersion = "WAITER",
-                                role = "FIRESTORE",
-                                source = source,
-                               )
-
-                            // ✅ Delete order and its items after successful processing
-                            try {
-                                val batch = firestore.batch()
-
-                                // Delete all items
-                                for (itemDoc in itemsSnapshot.documents) {
-                                    batch.delete(itemDoc.reference)
-                                }
-
-                                // Delete the order document
-                                batch.delete(orderRef)
-
-                                batch.commit().await()
-
-                                Log.d(
-                                    "SYNC",
-                                    "Deleted processed order and its items in batch: $orderId"
-                                )
-
-                            } catch (e: Exception) {
-                                Log.e(
-                                    "SYNC",
-                                    "Failed to delete processed order: $orderId",
-                                    e
-                                )
-                            }
-
+                            val itemsSnapshot = orderRef.collection("items").get().await()
+                            val batch = firestore.batch()
+                            itemsSnapshot.documents.forEach { batch.delete(it.reference) }
+                            batch.delete(orderRef)
+                            batch.commit().await()
+                            Log.d("CLEANUP", "🧹 Deleted old order: $orderId")
                         } catch (e: Exception) {
-                            Log.e("SYNC", "Error processing order: $orderId", e)
+                            Log.e("CLEANUP", "❌ Failed deleting old order: $orderId", e)
                         }
+                    }
+                    return@forEach
+                }
+
+                // ---------------- PROCESS NEW ORDERS ----------------
+                // Only process newly added orders
+                if (change.type != DocumentChange.Type.ADDED) return@forEach
+
+                val tableNo = orderDoc.getString("tableNo") ?: ""
+                val sessionId = orderDoc.getString("sessionId") ?: ""
+                val source = orderDoc.getString("source") ?: "UNKNOWN"
+
+                scope.launch(Dispatchers.IO) {
+                    try {
+                        // Prevent double-processing
+                        val insertResult = processedDao.insert(
+                            ProcessedCloudOrderEntity(
+                                orderId = orderId,
+                                processedAt = System.currentTimeMillis()
+                            )
+                        )
+                        if (insertResult == -1L) {
+                            Log.d("SYNC", "Already processed: $orderId")
+                            return@launch
+                        }
+
+                        // Fetch order items
+                        val itemsSnapshot = orderRef.collection("items").get().await()
+                        val cartList = itemsSnapshot.documents.map { itemDoc ->
+                            PosCartEntity(
+                                sessionId = sessionId,
+                                tableId = tableNo,
+                                productId = itemDoc.getString("productId") ?: "",
+                                name = itemDoc.getString("productName") ?: "",
+                                categoryId = itemDoc.getString("categoryId") ?: "",
+                                categoryName = itemDoc.getString("categoryName") ?: "",
+                                parentId = null,
+                                isVariant = false,
+                                basePrice = itemDoc.getDouble("price") ?: 0.0,
+                                quantity = (itemDoc.getLong("quantity") ?: 1L).toInt(),
+                                taxRate = itemDoc.getDouble("taxRate") ?: 0.0,
+                                taxType = "exclusive",
+                                note = itemDoc.getString("note") ?: "",
+                                modifiersJson = itemDoc.getString("modifiersJson") ?: "",
+                                kitchenPrintReq = itemDoc.getBoolean("kitchenPrintReq") ?: true,
+                                createdAt = System.currentTimeMillis()
+                            )
+                        }
+
+                        if (cartList.isEmpty()) return@launch
+
+                        // Save to kitchen
+                        kitchenViewModel.saveKotFromFirestoreWaiter(
+                            orderType = "DINE_IN",
+                            sessionId = sessionId,
+                            tableNo = tableNo,
+                            cartItems = cartList,
+                            deviceId = "WAITER",
+                            deviceName = "WAITER",
+                            appVersion = "WAITER",
+                            role = "FIRESTORE",
+                            source = source
+                        )
+
+                        // Delete after processing
+                        val batch = firestore.batch()
+                        itemsSnapshot.documents.forEach { batch.delete(it.reference) }
+                        batch.delete(orderRef)
+                        batch.commit().await()
+
+                        Log.d("SYNC", "✅ Processed & deleted: $orderId")
+                    } catch (e: Exception) {
+                        Log.e("SYNC", "❌ Error processing order: $orderId", e)
                     }
                 }
             }
-    }
-
+        }
+}
     // -------------------- WAITER --------------------
     // Listen to only MAIN POS orders
 
