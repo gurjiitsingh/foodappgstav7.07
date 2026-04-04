@@ -75,6 +75,7 @@ import com.it10x.foodappgstav7_07.ui.reports.TotalSalesReportScreen
 import com.it10x.foodappgstav7_07.ui.sales.SalesScreen
 import com.it10x.foodappgstav7_07.ui.sales.SalesViewModel
 import com.it10x.foodappgstav7_07.ui.sales.SalesViewModelFactory
+import com.it10x.foodappgstav7_07.ui.tables.WaiterTableViewScreen
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
@@ -637,6 +638,20 @@ fun NavigationHost(
                 onBack = {
                     navController.popBackStack()
                 }
+            )
+        }
+
+
+        composable("waiter_tables_view") {
+
+            val cartViewModel: CartViewModel = viewModel(
+                factory = cartViewModelFactory
+            )
+
+            WaiterTableViewScreen(
+                navController = navController,
+                cartViewModel = cartViewModel,
+                posSessionViewModel = posSessionViewModel
             )
         }
 

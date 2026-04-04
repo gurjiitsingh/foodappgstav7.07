@@ -408,6 +408,28 @@ class MainActivity : ComponentActivity() {
                                         }
                                     )
 
+
+
+
+
+                                    Divider(
+                                        modifier = Modifier
+                                            .padding(horizontal = 16.dp)
+                                            .padding(bottom = 4.dp),
+                                        thickness = 0.5.dp
+                                    )
+
+                                    NavigationDrawerItem(
+                                        label = { Text("Waiter Tables View") },
+                                        selected = false,
+                                        onClick = {
+                                            scope.launch { drawerState.close() }
+                                            navController.navigate("waiter_tables_view") {
+                                                launchSingleTop = true
+                                            }
+                                        }
+                                    )
+
                                     Divider(
                                         modifier = Modifier
                                             .padding(horizontal = 16.dp)
@@ -447,20 +469,7 @@ class MainActivity : ComponentActivity() {
                                         }
                                     )
 
-//                                    Divider(
-//                                        modifier = Modifier
-//                                            .padding(horizontal = 16.dp)
-//                                            .padding(bottom = 4.dp),
-//                                        thickness = 0.5.dp
-//                                    )
-//                                    NavigationDrawerItem(
-//                                        label = { Text("History Orders") },
-//                                        selected = false,
-//                                        onClick = {
-//                                            scope.launch { drawerState.close() }
-//                                            navController.navigate("history_orders")
-//                                        }
-//                                    )
+
 
 
                                     // ===============================
