@@ -1,6 +1,7 @@
 package com.it10x.foodappgstav7_07.ui.tables
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -23,13 +24,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 import com.it10x.foodappgstav7_07.viewmodel.PosTableViewModel
-import com.it10x.foodappgstav7_07.ui.pos.StatusBadge
+
 
 @Composable
 fun WaiterTableViewGrid(
     tables: List<PosTableViewModel.TableUiState>,
     selectedTable: String?,
-    onTableClick: (String) -> Unit
+    onTableClick: (String) -> Unit,
+    onSyncClick: (String) -> Unit
 ) {
 
     val groupedByArea = tables
@@ -65,69 +67,94 @@ fun WaiterTableViewGrid(
 
                 val table = ui.table
                 val isSelected = selectedTable == table.id
-
+                val isMismatch = ui.billDoneCount != ui.table.cartCount
                 Surface(
                     shape = RoundedCornerShape(12.dp),
                     tonalElevation = 2.dp,
-                    border = if (isSelected)
-                        BorderStroke(2.dp, Color(0xFFFF9800))
-                    else null,
+                    border = when {
+                        isSelected -> BorderStroke(2.dp, Color(0xFFFF9800)) // selected
+                        isMismatch -> BorderStroke(2.dp, Color.Red)         // mismatch
+                        else -> null
+                    },
                     modifier = Modifier
                         .aspectRatio(0.9f)
-                        .clickable {
-                            onTableClick(table.id)
-                        }
+                        .clickable { onTableClick(table.id) }
                 ) {
 
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(8.dp),
+                            .padding(4.dp),
                         verticalArrangement = Arrangement.SpaceBetween
                     ) {
 
-                        // 🔹 TABLE NAME + BILL AMOUNT
+                        // 🔹 TABLE NAME (TOP)
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
+                            Button(
+                                onClick = { onSyncClick(table.id) },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(34.dp),
+                                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
 
-                                Icon(
-                                    imageVector = Icons.Default.Restaurant,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
+                                    // 🔹 LEFT → Icon + Table Name
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
 
-                                Spacer(Modifier.width(6.dp))
 
-                                Text(
-                                    text = table.tableName,
-                                    style = MaterialTheme.typography.titleMedium
-                                )
+
+                                        Text(
+                                            text = table.tableName,
+                                            style = MaterialTheme.typography.labelMedium,
+                                            maxLines = 1
+                                        )
+                                    }
+
+                                    // 🔹 RIGHT → Sync Icon
+                                    Text(
+                                        text = "🔄", // simple + fast
+                                        style = MaterialTheme.typography.labelMedium
+                                    )
+                                }
                             }
 
-                            if (ui.billAmount > 0) {
-                                Text(
-                                    text = ui.billAmount.toInt().toString(),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
+
                         }
 
-                        // 🔹 ONLY BILL BADGE (🧾)
+
+
+                        // 🔹 BADGES (BOTTOM) - COMPACT
                         Column(
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
 
+                            // ✅ POS (Local)
                             if (ui.billDoneCount > 0) {
-                                StatusBadge(
+                                StatusBadgeWaiter(
                                     icon = "🧾",
+                                    label = "POS",
                                     text = ui.billDoneCount.toString(),
                                     bgColor = Color(0xFF2E7D32).copy(alpha = 0.7f),
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+
+                            // ✅ WAITER (Firestore)
+                            if (ui.table.cartCount > 0) {
+                                StatusBadgeWaiter(
+                                    icon = "👨‍🍳",
+                                    label = "Waiter",
+                                    text = ui.table.cartCount.toString(),
+                                    bgColor = Color(0xFF1976D2).copy(alpha = 0.7f),
                                     modifier = Modifier.fillMaxWidth()
                                 )
                             }
@@ -136,5 +163,36 @@ fun WaiterTableViewGrid(
                 }
             }
         }
+    }
+}
+
+
+@Composable
+fun StatusBadgeWaiter(
+    icon: String,
+    label: String,
+    text: String,
+    bgColor: Color,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .background(bgColor, shape = RoundedCornerShape(6.dp))
+            .padding(horizontal = 6.dp, vertical = 2.dp), // ✅ compact height
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+
+        Text(
+            text = "$icon $label",
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Medium
+        )
+
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Bold
+        )
     }
 }

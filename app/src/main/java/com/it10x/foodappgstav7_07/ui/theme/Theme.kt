@@ -111,7 +111,7 @@ fun FoodPosTheme(
             )
 
             darkColorScheme(
-                primary = Color(0xFFF97316),          // 🟠 Primary Orange
+                primary = Color(0xFFF25C05),          // 🟠 Primary Orange more dark:  0xFFF24505
                 onPrimary = Color.White,
                 background = Color(0xFF0F172A),       // 🔵 Dark blue background
                 onBackground = Color.White,

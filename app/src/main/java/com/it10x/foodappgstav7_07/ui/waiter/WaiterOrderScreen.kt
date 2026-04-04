@@ -1,4 +1,5 @@
-package com.it10x.foodappgstav7_07.com.it10x.foodappgstav7_07.ui.pos
+
+package com.it10x.foodappgstav7_07.ui.waiter
 
 import android.app.Application
 import androidx.compose.foundation.background
@@ -155,15 +156,6 @@ fun WaiterPosScreen(
         .collectAsState(initial = emptyList())
     val canOpenBill = BillItems.isNotEmpty()
 
-    val hasBillItems = BillItems?.isNotEmpty() == true
-//    val canOpenBill =
-//        hasBillItems && when (orderType) {
-//            "DINE_IN" -> true
-//            "TAKEAWAY", "DELIVERY" -> true
-//            else -> false
-//        }
-
-
 
     val waiterKitchenRepository = remember {
         WaiterKitchenRepository(FirebaseFirestore.getInstance())
@@ -240,11 +232,7 @@ fun WaiterPosScreen(
         // productsViewModel.setSearchQuery("")
         showSearchKeyboard = false
     }
-//    Box(
-//        modifier = Modifier
-//            .fillMaxSize()
-//            .background(MaterialTheme.colorScheme.background)
-//    )
+
     Column(
         modifier = Modifier
             .fillMaxSize()

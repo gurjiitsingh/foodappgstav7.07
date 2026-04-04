@@ -63,7 +63,11 @@ class GlobalOrderSyncManager(
         mainPosListener?.remove()
         mainPosListener = null
 
+        val now = System.currentTimeMillis()
+        val cutoff = now - (12 * 60 * 60 * 1000)
+
         mainPosListener = firestore.collection("waiter_orders")
+            .whereGreaterThan("createdAt", cutoff)
             .addSnapshotListener { snapshot, error ->
 
                 if (error != null || snapshot == null) return@addSnapshotListener

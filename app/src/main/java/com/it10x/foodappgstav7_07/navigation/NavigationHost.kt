@@ -19,7 +19,7 @@ import androidx.navigation.navArgument
 import com.it10x.foodappgstav7_07.core.PosRole
 import com.it10x.foodappgstav7_07.core.PosRoleManager
 import com.it10x.foodappgstav7_07.ui.setting.DeviceRoleSelectionScreen
-import com.it10x.foodappgstav7_07.com.it10x.foodappgstav7_07.ui.pos.WaiterPosScreen
+import com.it10x.foodappgstav7_07.ui.waiter.WaiterPosScreen
 import com.it10x.foodappgstav7_07.com.it10x.foodappgstav7_07.ui.tables.TableScreen
 import com.it10x.foodappgstav7_07.com.ui.settings.PrinterRoleSelectionScreen
 import com.it10x.foodappgstav7_07.data.PrinterPreferences
@@ -648,9 +648,12 @@ fun NavigationHost(
                 factory = cartViewModelFactory
             )
 
+            val posTableViewModel: PosTableViewModel = viewModel()
+
             WaiterTableViewScreen(
                 navController = navController,
                 cartViewModel = cartViewModel,
+                posTableViewModel = posTableViewModel, // ✅ REQUIRED
                 posSessionViewModel = posSessionViewModel
             )
         }

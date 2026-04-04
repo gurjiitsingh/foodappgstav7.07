@@ -107,7 +107,7 @@ fun TableGridContent(
                             // OPEN POS BUTTON
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
-                                color = Color(0xFFFF8C00),
+                                color = MaterialTheme.colorScheme.primary,
                                 shadowElevation = 3.dp,
                                 modifier = Modifier
                                     .fillMaxWidth()
