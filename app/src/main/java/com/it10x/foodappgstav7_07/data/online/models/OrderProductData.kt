@@ -3,6 +3,7 @@ package com.it10x.foodappgstav7_07.data.online.models
 data class OrderProductData(
 
     val id: String = "",
+    val productId: String = "",
     val orderMasterId: String = "",
 
     val categoryName: String = "",

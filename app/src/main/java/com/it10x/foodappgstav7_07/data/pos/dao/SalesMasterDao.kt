@@ -106,6 +106,17 @@ GROUP BY categoryId
         from: Long,
         to: Long
     ): List<PosOrderMasterEntity>
+
+    @Query("""
+    SELECT * FROM pos_order_master
+    WHERE createdAt BETWEEN :from AND :to
+""")
+    suspend fun getAllOrdersBetween(
+        from: Long,
+        to: Long
+    ): List<PosOrderMasterEntity>
+
+
 }
 data class CategorySaleRaw(
     val categoryId: String,

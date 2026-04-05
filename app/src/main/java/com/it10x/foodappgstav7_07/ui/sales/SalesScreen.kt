@@ -158,13 +158,25 @@ fun SalesScreen(
                             Text("Summary", style = MaterialTheme.typography.titleMedium)
                             Spacer(Modifier.height(8.dp))
 
+// ---------------- MAIN TOTALS ----------------
                             SummaryRow("Total Before Discount", uiState.totalBeforeDiscount)
                             SummaryRow("Total Discount", uiState.discountTotal)
-                            SummaryRow("Total Sales (After Discount)", uiState.totalSales)
+                            SummaryRow("Total Sales (All Orders)", uiState.totalSales)
                             SummaryRow("Tax", uiState.taxTotal)
 
                             Spacer(Modifier.height(8.dp))
 
+// ---------------- CREDIT / RECEIVED ----------------
+                            SummaryRow("Received Amount", uiState.receivedTotal)
+                            SummaryRow("Credit Pending", uiState.creditTotal)
+
+                            Spacer(Modifier.height(8.dp))
+
+                            Divider()
+
+                            Spacer(Modifier.height(8.dp))
+
+// ---------------- PAYMENT BREAKUP ----------------
                             uiState.paymentBreakup.forEach { (type, amount) ->
                                 SummaryRow(type, amount)
                             }
@@ -196,11 +208,6 @@ fun SalesScreen(
                         Spacer(Modifier.height(6.dp))
                     }
                 }
-
-//                items(uiState.categorySales.toList()) { (category, amount) ->
-//                    SummaryRow(category, amount)
-//                }
-
 
 
 
@@ -268,15 +275,15 @@ fun SalesScreen(
 
 
                 // ORDERS HEADER
-                item {
-                    Spacer(Modifier.height(8.dp))
-                    Text("Orders", style = MaterialTheme.typography.titleMedium)
-                }
+//                item {
+//                    Spacer(Modifier.height(8.dp))
+//                    Text("Orders", style = MaterialTheme.typography.titleMedium)
+//                }
 
                 // ORDERS LIST
-                items(uiState.orders) { order ->
-                    SalesOrderRow(order)
-                }
+//                items(uiState.orders) { order ->
+//                    SalesOrderRow(order)
+//                }
             }
         }
     }
@@ -294,43 +301,43 @@ private fun SummaryRow(label: String, value: Double) {
     }
 }
 
-@Composable
-private fun SalesOrderRow(order: PosOrderMasterEntity) {
-
-    val time = remember(order.createdAt) {
-        SimpleDateFormat(
-            "dd MMM yyyy, hh:mm a",
-            Locale.getDefault()
-        ).format(Date(order.createdAt))
-    }
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        elevation = CardDefaults.cardElevation(2.dp)
-    ) {
-        Column(modifier = Modifier.padding(10.dp)) {
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text("Order #${order.srno}")
-                Text("₹ %.2f".format(order.grandTotal))
-            }
-
-            Spacer(Modifier.height(4.dp))
-
-            Text(
-                "${order.orderType} • ${order.paymentMode}",
-                style = MaterialTheme.typography.bodySmall
-            )
-
-            Text(
-                time,
-                style = MaterialTheme.typography.bodySmall
-            )
-        }
-    }
-}
+//@Composable
+//private fun SalesOrderRow(order: PosOrderMasterEntity) {
+//
+//    val time = remember(order.createdAt) {
+//        SimpleDateFormat(
+//            "dd MMM yyyy, hh:mm a",
+//            Locale.getDefault()
+//        ).format(Date(order.createdAt))
+//    }
+//
+//    Card(
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .padding(vertical = 4.dp),
+//        elevation = CardDefaults.cardElevation(2.dp)
+//    ) {
+//        Column(modifier = Modifier.padding(10.dp)) {
+//
+//            Row(
+//                modifier = Modifier.fillMaxWidth(),
+//                horizontalArrangement = Arrangement.SpaceBetween
+//            ) {
+//                Text("Order #${order.srno}")
+//                Text("₹ %.2f".format(order.grandTotal))
+//            }
+//
+//            Spacer(Modifier.height(4.dp))
+//
+//            Text(
+//                "${order.orderType} • ${order.paymentMode}",
+//                style = MaterialTheme.typography.bodySmall
+//            )
+//
+//            Text(
+//                time,
+//                style = MaterialTheme.typography.bodySmall
+//            )
+//        }
+//    }
+//}

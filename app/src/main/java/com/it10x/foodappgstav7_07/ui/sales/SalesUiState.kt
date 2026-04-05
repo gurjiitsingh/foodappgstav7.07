@@ -12,6 +12,9 @@ data class SalesUiState(
     val taxTotal: Double = 0.0,
     val discountTotal: Double = 0.0,
 
+    val creditTotal: Double = 0.0,
+    val receivedTotal: Double = 0.0,
+
     val paymentBreakup: Map<String, Double> = emptyMap(),
 
     // ✅ FIXED TYPES

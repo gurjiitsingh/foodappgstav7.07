@@ -1,17 +1,12 @@
 // File: SalesViewModel.kt
 package com.it10x.foodappgstav7_07.ui.sales
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.it10x.foodappgstav7_07.data.pos.dao.OrderProductDao
 import com.it10x.foodappgstav7_07.data.pos.dao.SalesMasterDao
-import com.it10x.foodappgstav7_07.data.pos.dao.PaymentBreakup
-import com.it10x.foodappgstav7_07.data.pos.dao.TaxDiscountSummary
-import com.it10x.foodappgstav7_07.data.pos.entities.PosOrderMasterEntity
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
 import java.util.*
 
 class SalesViewModel(
@@ -29,7 +24,6 @@ class SalesViewModel(
     private val _fromDate = MutableStateFlow(startOfToday())
     private val _toDate = MutableStateFlow(endOfToday())
 
-    //val result = repo.getTotalSalesReport(startMillis, endMillis)
     init {
         refreshSales()
     }
@@ -40,7 +34,6 @@ class SalesViewModel(
         refreshSales()
     }
 
-
     fun refreshSales() {
         viewModelScope.launch {
 
@@ -49,18 +42,33 @@ class SalesViewModel(
             val from = _fromDate.value
             val to = _toDate.value
 
-            val sales = salesMasterDao
-                .getPaidOrdersBetween(from, to)
+            // ✅ ALL ORDERS (including CREDIT)
+            val sales = salesMasterDao.getAllOrdersBetween(from, to)
 
+            // ---------------- TOTALS ----------------
             val total = sales.sumOf { it.grandTotal }
             val taxTotal = sales.sumOf { it.taxTotal }
             val discountTotal = sales.sumOf { it.discountTotal }
+
             val totalBeforeDiscount = sales.sumOf {
                 it.grandTotal + it.discountTotal
             }
 
-            val paymentBreakup = sales.groupBy { it.paymentMode }
-                .mapValues { it.value.sumOf { o -> o.grandTotal } }
+            // ---------------- CREDIT / RECEIVED ----------------
+            val creditTotal = sales
+                .filter { it.paymentMode.equals("CREDIT", true) }
+                .sumOf { it.grandTotal }
+
+            val receivedTotal = sales
+                .filter { !it.paymentMode.equals("CREDIT", true) }
+                .sumOf { it.grandTotal }
+
+            // ---------------- PAYMENT BREAKUP ----------------
+            val paymentBreakup = sales
+                .groupBy { it.paymentMode }
+                .mapValues { entry ->
+                    entry.value.sumOf { it.grandTotal }
+                }
 
             // ---------------- CATEGORY SALES ----------------
             val categoryResults =
@@ -98,6 +106,7 @@ class SalesViewModel(
                 }
                 .values.sumOf { it.second }
 
+            // ---------------- FINAL UI STATE ----------------
             _uiState.value = SalesUiState(
                 isLoading = false,
                 orders = sales,
@@ -111,18 +120,15 @@ class SalesViewModel(
                 foodTotal = foodTotal,
                 beveragesTotal = beveragesTotal,
                 wineTotal = wineTotal,
+                creditTotal = creditTotal,       // ✅ NEW
+                receivedTotal = receivedTotal,   // ✅ NEW
                 from = from,
                 to = to
             )
         }
     }
 
-
-
-
-
     // ---------------- HELPER FUNCTIONS ----------------
-
 
     fun startOfToday(): Long {
         val calendar = Calendar.getInstance()
@@ -141,7 +147,4 @@ class SalesViewModel(
         calendar.set(Calendar.MILLISECOND, 999)
         return calendar.timeInMillis
     }
-
-
-
 }

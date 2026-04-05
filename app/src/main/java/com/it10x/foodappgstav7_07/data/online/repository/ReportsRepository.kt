@@ -163,7 +163,7 @@ class ReportsRepository {
             }
 
             // 🔥 GROUPING
-            val grouped = items.groupBy { it.id }
+            val grouped = items.groupBy { it.productId }
 
             grouped.map { (_, list) ->
 
