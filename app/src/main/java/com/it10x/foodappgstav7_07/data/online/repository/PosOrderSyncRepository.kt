@@ -116,9 +116,11 @@ class PosOrderSyncRepository(
                 val itemDate = Date(item.createdAt)
                 val itemOrderDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(itemDate)
                 val itemOrderMonth = SimpleDateFormat("yyyy-MM", Locale.getDefault()).format(itemDate)
+                Log.d("FINAL_TRACE", "ADDING productId=${item}, name=${item.name}")
                 batch.set(itemRef, mapOf(
                     "id" to item.id,
                     "orderMasterId" to order.id,
+                    "productId" to item.productId,
                     "name" to item.name,
                     "categoryId" to item.categoryId,
                     "categoryName" to item.categoryName,
@@ -149,6 +151,7 @@ class PosOrderSyncRepository(
                 batch.set(itemRef, mapOf(
                     "id" to item.id,
                     "orderMasterId" to order.id,
+                    "itemId" to item.productId,
                     "name" to item.name,
                     "categoryId" to item.categoryId,
                     "categoryName" to item.categoryName,

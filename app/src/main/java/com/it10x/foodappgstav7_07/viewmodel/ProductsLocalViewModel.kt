@@ -1,5 +1,6 @@
 package com.it10x.foodappgstav7_07.data.pos.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.it10x.foodappgstav7_07.data.pos.dao.ProductDao
@@ -23,10 +24,12 @@ class ProductsLocalViewModel(
 
 
 
+
     val products: StateFlow<List<ProductEntity>> =
         combine(_searchQuery, _selectedCategory, _showMoreMatches) { query, category, more ->
             Triple(query.trim(), category, more)
         }.flatMapLatest { (query, category, showMore) ->
+
 
             when {
                 query.isNotEmpty() -> {
@@ -34,35 +37,65 @@ class ProductsLocalViewModel(
 
                     if (isNumeric) {
                         dao.searchExactCodeWithFoodType(query, null)
+                            .map { list ->
+                                Log.d("PRODUCT_FLOW", "Numeric search result size: ${list.size}")
+                                list.take(5).forEach {
+                                    Log.d("PRODUCT_FLOW", "ID: ${it.id} | Name: ${it.name}")
+                                }
+                                list
+                            }
                     } else {
                         dao.getAll().map { allProducts ->
+
+                            Log.d("PRODUCT_FLOW", "Total products: ${allProducts.size}")
+
                             val lowerQuery = query.lowercase()
 
-                            // 🔹 First-word progressive match
                             val firstWordMatches = allProducts.filter { product ->
                                 val firstWord = product.name.split(" ").firstOrNull()?.lowercase() ?: ""
                                 firstWord.startsWith(lowerQuery)
                             }
 
-                            if (!showMore) {
+                            val result = if (!showMore) {
                                 firstWordMatches
                             } else {
-                                // 🔹 "More" key pressed → search in remaining words
                                 val otherWordMatches = allProducts.filter { product ->
                                     val words = product.name.split(" ").drop(1).map { it.lowercase() }
                                     words.any { it.startsWith(lowerQuery) }
-                                }
-                                    .filter { it !in firstWordMatches } // avoid duplicates
+                                }.filter { it !in firstWordMatches }
 
-                                // 🔹 Combine first-word matches + other-word matches
                                 firstWordMatches + otherWordMatches
                             }
+
+                            Log.d("PRODUCT_FLOW", "Search result size: ${result.size}")
+                            result.take(5).forEach {
+                                Log.d("PRODUCT_FLOW", "ID: ${it.id} | Name: ${it.name}")
+                            }
+
+                            result
                         }
                     }
                 }
 
-                category != null -> dao.getByCategory(category)
-                else -> dao.getAll()
+                category != null -> {
+                    dao.getByCategory(category).map { list ->
+                        Log.d("PRODUCT_FLOW", "Category filter: $category | size: ${list.size}")
+                        list.take(5).forEach {
+                            Log.d("PRODUCT_FLOW", "ID: ${it.id} | Name: ${it.name}")
+                        }
+                        list
+                    }
+                }
+
+                else -> {
+                    dao.getAll().map { list ->
+                        Log.d("PRODUCT_FLOW", "ALL products size: ${list.size}")
+                        list.take(5).forEach {
+                            Log.d("PRODUCT_FLOW", "ID: ${it.id} | Name: ${it.name}")
+                        }
+                        list
+                    }
+                }
             }
         }.stateIn(
             viewModelScope,

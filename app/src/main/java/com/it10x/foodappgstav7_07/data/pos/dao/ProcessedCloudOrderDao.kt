@@ -12,6 +12,10 @@ interface ProcessedCloudOrderDao {
     @Query("SELECT COUNT(*) FROM processed_cloud_orders WHERE orderId = :id")
     suspend fun isProcessed(id: String): Int
 
+    @Query("DELETE FROM processed_cloud_orders WHERE processedAt < :cutoff")
+    suspend fun deleteOlderThan(cutoff: Long)
+
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(entity: ProcessedCloudOrderEntity): Long
 }

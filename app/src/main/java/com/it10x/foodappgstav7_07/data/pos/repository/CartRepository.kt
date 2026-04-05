@@ -59,15 +59,6 @@ class CartRepository(
     }
     // ---------- ADD ----------
     suspend fun  addToCart(product: PosCartEntity, tableNo: String) {
-//        val existing = dao.getItemByIdForTable(product.productId, tableId = tableNo)
-//       // Log.d("TABLE_DEBUG", "item :${existing} table${tableNo}")
-//        if (existing == null) {
-//            dao.insert(product.copy(quantity = 1))
-//
-//        } else {
-//            dao.update(existing.copy(quantity = existing.quantity + 1))
-//        }
-//        syncCartCount(tableNo)
 
         val cleanNote = normalizeNote(product.note)
         val cleanModifiers = normalizeNote(product.modifiersJson)
@@ -140,21 +131,6 @@ class CartRepository(
         syncCartCount(tableNo)
     }
 
-
-//suspend fun decrease(productId: String, tableNo: String) {
-//
-//    val existing = dao.getItemByIdForTable(productId, tableNo) ?: return
-//    Log.d(
-//        "TABLE_DEBUG",
-//        "DECREASE_CLICK (In CartRepository)  tableId=${tableNo} Product: ${existing}"
-//    )
-//    if (existing.quantity > 1) {
-//        dao.update(existing.copy(quantity = existing.quantity - 1))
-//    } else {
-//        dao.delete(existing)
-//    }
-//  //  syncCartCount(tableNo)
-//}
 
     private fun normalizeNote(note: String?): String {
         return note?.trim().orEmpty()

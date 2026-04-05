@@ -38,6 +38,9 @@ class GlobalOrderSyncManager(
 
         stopListening() // always stop first
 
+        // Cleanup once on start
+        cleanupOldProcessedIds()
+
         when (role) {
             PosRole.MAIN -> startMainPosListener()
             PosRole.WAITER -> startWaiterListener()
@@ -312,11 +315,16 @@ private fun startMainPosListener() {
                         batch.delete(orderRef)
                         batch.commit().await()
 
+
+
                         Log.d("SYNC", "✅ Processed & deleted: $orderId")
                     } catch (e: Exception) {
                         Log.e("SYNC", "❌ Error processing order: $orderId", e)
                     }
                 }
+
+
+
             }
         }
 }
@@ -422,5 +430,15 @@ private fun startMainPosListener() {
 
     // -------------------- ORDER PROCESSING --------------------
 
-
+    private fun cleanupOldProcessedIds() {
+        scope.launch(Dispatchers.IO) {
+            try {
+                val cutoff = System.currentTimeMillis() - 24 * 60 * 60 * 1000 // 24h
+                val deleted = processedDao.deleteOlderThan(cutoff)
+                Log.d("CLEANUP", "🧹 Deleted $deleted old processed IDs")
+            } catch (e: Exception) {
+                Log.e("CLEANUP", "❌ Failed to cleanup processed IDs", e)
+            }
+        }
+    }
 }

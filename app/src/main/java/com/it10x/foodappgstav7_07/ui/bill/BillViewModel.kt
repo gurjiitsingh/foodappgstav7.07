@@ -208,11 +208,7 @@ class BillViewModel(
 
     init {
 
-//        Log.d(
-//            "BILL_DEBUG",
-//            "BillViewModel started with tableId=$tableId, orderType=$orderType"
-//
-//        )
+
 
         observeBill()
         loadCurrency()
@@ -387,22 +383,8 @@ class BillViewModel(
                     return@launch
                 }
 
-          //  val itemSubtotal = kotItems.sumOf { it.basePrice * it.quantity }
                 val itemSubtotalPaise =
                     kotItems.sumOf { MoneyUtils.toPaise(it.basePrice) * it.quantity }
-
-//                val taxTotalPaise = kotItems
-//                    .filter { it.taxType == "exclusive" }
-//                    .sumOf {
-//
-//                        val basePaise = MoneyUtils.toPaise(it.basePrice)
-//
-//                        // ❗ exact tax (NO rounding here)
-//                        val exactTaxPerItem = (basePaise * it.taxRate) / 100.0
-//
-//                        exactTaxPerItem * it.quantity
-//                    }
-//                    .toLong()   // ✅ ONLY ONE ROUNDING HERE
 
                 val rawTaxPaise = kotItems
                     .filter { it.taxType == "exclusive" }
@@ -430,11 +412,8 @@ class BillViewModel(
                 val taxAfterDiscountPaise =
                     (rawTaxPaise * (1 - discountRatio)).roundToLong()
 
-
             val now = System.currentTimeMillis()
             val orderId = UUID.randomUUID().toString()
-
-
 
             val srno = orderSequenceRepository.nextOrderNo(
                 outletId = outlet.outletId,
@@ -445,9 +424,6 @@ class BillViewModel(
             )
 
 
-
-//                val grandTotalPaise =
-//                    itemSubtotalPaise - safeDiscountPaise + taxTotalPaise
                 val grandTotalPaise =
                     itemSubtotalPaise - safeDiscountPaise + taxAfterDiscountPaise
             // ===========================
@@ -712,18 +688,14 @@ class BillViewModel(
 
 
                 withContext(Dispatchers.IO) {
-//                    Log.d("TAX_DEBUG", "FINAL TAX PAISE (WRONG): $taxTotalPaise")
-//                    Log.d("TAX_DEBUG", "FINAL TAX DOUBLE: ${MoneyUtils.fromPaise(taxTotalPaise)}")
                 orderMasterDao.insert(orderMaster)
                 orderProductDao.insertAll(orderItems)
 
                     if (payments.isNotEmpty() && totalPaidPaise > 0){
 
                     val paymentEntities = payments.map {
-//                        Log.d("BILL_DEBUG", "Saving Payment → Paise=${it.amount}")
-                        val amountDouble = MoneyUtils.fromPaise(it.amount)
-//                        Log.d("BILL_DEBUG", "Converted to Double = $amountDouble")
-                        PosOrderPaymentEntity(
+
+                       PosOrderPaymentEntity(
                             id = UUID.randomUUID().toString(),
                             orderId = orderId,
                             ownerId = outlet.ownerId,
@@ -892,10 +864,6 @@ class BillViewModel(
                         it.status == "DONE"
             }
 
-
-//            groupedItems.forEach {
-//                Log.d("EDIT_DEBUG", "Match -> id=${it.id} qty=${it.quantity}")
-//            }
 
             // Delete
             groupedItems.forEach {

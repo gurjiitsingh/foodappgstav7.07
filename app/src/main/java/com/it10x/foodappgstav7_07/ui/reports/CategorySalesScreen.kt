@@ -175,10 +175,12 @@ fun CategorySalesScreen(
                     contentPadding = PaddingValues(horizontal = 15.dp, vertical = 2.dp),
                     onClick = {
 
+                       // if (selectedCategoryName == "Select Category") return@Button
                         if (selectedCategoryId == null) return@Button
+                        if (startDate > endDate) return@Button
 
                         viewModel.loadCategoryReport(
-                            category = selectedCategoryName,
+                            categoryId = selectedCategoryId!!,   // ✅ USE ID
                             startMillis = startDate,
                             endMillis = endDate
                         )
@@ -192,41 +194,58 @@ fun CategorySalesScreen(
 
             when {
 
-                loading -> Text("Loading...")
+                loading -> {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
 
                 else -> {
 
-                    CategoryHeader()
+                    // ✅ SHOW NO DATA MESSAGE HERE
+                    if (qty == 0 && totalSales == 0.0) {
+                        Text(
+                            "No data found for selected range",
+                            color = Color.Gray,
+                            modifier = Modifier.padding(8.dp)
+                        )
+                    } else {
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                        CategoryHeader()
 
-                        Column(modifier = Modifier.weight(1f)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
 
-                            CategoryRow(
-                                category = selectedCategoryName,
-                                qty = qty,
-                                sales = totalSales
-                            )
-                        }
+                            Column(modifier = Modifier.weight(1f)) {
 
-                        Button(
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF2E7D32),
-                                contentColor = Color.White
-                            ),
-                            onClick = {
-                                printer.printCategorySummary(
-                                    PrinterRole.BILLING,
-                                    selectedCategoryName,
-                                    qty,
-                                    totalSales
+                                CategoryRow(
+                                    category = selectedCategoryName,
+                                    qty = qty,
+                                    sales = totalSales
                                 )
                             }
-                        ) {
-                            Text("Print")
+
+                            Button(
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF2E7D32),
+                                    contentColor = Color.White
+                                ),
+                                onClick = {
+                                    printer.printCategorySummary(
+                                        PrinterRole.BILLING,
+                                        selectedCategoryName,
+                                        qty,
+                                        totalSales
+                                    )
+                                }
+                            ) {
+                                Text("Print")
+                            }
                         }
                     }
                 }

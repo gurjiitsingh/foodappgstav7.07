@@ -1,6 +1,7 @@
 package com.it10x.foodappgstav7_07.viewmodel
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -63,7 +64,7 @@ class OnlineReportsViewModel(
         }
     }
 
-    fun loadCategoryReport(
+    fun loadCategoryReportOld(
         category: String,
         startMillis: Long,
         endMillis: Long
@@ -74,7 +75,7 @@ class OnlineReportsViewModel(
             _loading.value = true
 
             val result = repo.getCategorySalesByDate(
-                category = category,
+                categoryId = category,
                 startMillis = startMillis,
                 endMillis = endMillis
             )
@@ -85,7 +86,41 @@ class OnlineReportsViewModel(
             _loading.value = false
         }
     }
+    fun loadCategoryReport(
+        categoryId: String,
+        startMillis: Long,
+        endMillis: Long
+    ) {
 
+        viewModelScope.launch {
+
+            if (_loading.value) return@launch
+
+            _loading.value = true
+
+            try {
+
+                val result = repo.getCategorySalesByDate(
+                    categoryId = categoryId,   // ✅ pass ID
+                    startMillis = startMillis,
+                    endMillis = endMillis
+                )
+
+                _qty.value = result?.totalQty ?: 0
+                _totalSales.value = result?.totalSales ?: 0.0
+
+            } catch (e: Exception) {
+
+                e.printStackTrace()
+
+                _qty.value = 0
+                _totalSales.value = 0.0
+
+            } finally {
+                _loading.value = false
+            }
+        }
+    }
 
     fun startOfToday(): Long {
         val calendar = Calendar.getInstance()
@@ -123,6 +158,45 @@ class OnlineReportsViewModel(
                 result.totalSales + result.totalDiscount
 
             _loading.value = false
+        }
+    }
+
+
+
+    fun loadProductReport(
+        productId: String,
+        productName: String,
+        startMillis: Long,
+        endMillis: Long
+    ) {
+        Log.d("PRODUCT_REPORT", "loadProductReport called with: $productId")
+        viewModelScope.launch {
+
+            if (_loading.value) return@launch // ✅ prevent double click
+
+            _loading.value = true
+
+            try {
+
+                val result = repo.getProductSalesByDate(
+                    productId = productId,
+                    startMillis = startMillis,
+                    endMillis = endMillis
+                )
+
+                _qty.value = result?.totalQty ?: 0
+                _totalSales.value = result?.totalSales ?: 0.0
+
+            } catch (e: Exception) {
+
+                e.printStackTrace()
+
+                _qty.value = 0
+                _totalSales.value = 0.0
+
+            } finally {
+                _loading.value = false
+            }
         }
     }
 

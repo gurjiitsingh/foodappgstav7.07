@@ -116,6 +116,7 @@ class CartViewModel(
         product: ProductEntity,
         price: Double
     ) {
+
         viewModelScope.launch {
             Log.d(
                 "CART_SCOPE_DEBUG",

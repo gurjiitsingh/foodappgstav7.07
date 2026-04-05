@@ -70,6 +70,7 @@ import com.it10x.foodappgstav7_07.ui.orders.history.OrderItemsScreen
 import com.it10x.foodappgstav7_07.ui.pos.PosSessionViewModel
 import com.it10x.foodappgstav7_07.ui.pos.customer.CustomerAddressScreen
 import com.it10x.foodappgstav7_07.ui.reports.CategorySalesScreen
+import com.it10x.foodappgstav7_07.ui.reports.ProductSalesScreen
 import com.it10x.foodappgstav7_07.ui.reports.TotalSalesReportScreen
 
 import com.it10x.foodappgstav7_07.ui.sales.SalesScreen
@@ -441,6 +442,36 @@ fun NavigationHost(
             )
         }
 
+        composable("products_sales") {
+
+            val context = LocalContext.current
+
+            // ✅ Reports ViewModel
+            val reportsViewModel: OnlineReportsViewModel = viewModel(
+                factory = OnlineReportsViewModelFactory(
+                    context.applicationContext as Application
+                )
+            )
+
+            // ✅ Database
+            val db = com.it10x.foodappgstav7_07.data.pos.AppDatabaseProvider.get(context)
+
+            // ✅ Products ViewModel (IMPORTANT)
+            val productsViewModel: com.it10x.foodappgstav7_07.data.pos.viewmodel.ProductsLocalViewModel =
+                viewModel(
+                    factory = com.it10x.foodappgstav7_07.data.pos.viewmodel.ProductsLocalViewModelFactory(
+                        db.productDao()
+                    )
+                )
+
+            // ✅ Screen
+            ProductSalesScreen(
+                navController = navController,
+                viewModel = reportsViewModel,
+                productsViewModel = productsViewModel
+            )
+        }
+
         composable("total_sales") {
 
             val context = LocalContext.current
@@ -454,7 +485,8 @@ fun NavigationHost(
             TotalSalesReportScreen(
                 viewModel = reportsViewModel,
                 onBack = { navController.popBackStack() },
-                onHistoryCategoryReport =  { navController.navigate("category_sales") }
+                onHistoryCategoryReport =  { navController.navigate("category_sales") },
+                onHistoryProductReport =  { navController.navigate("products_sales") }
             )
 
         }

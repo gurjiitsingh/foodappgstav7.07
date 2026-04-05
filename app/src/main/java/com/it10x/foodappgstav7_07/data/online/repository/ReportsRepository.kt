@@ -10,6 +10,7 @@ import com.google.firebase.Timestamp
 import com.it10x.foodappgstav7_07.data.online.models.OrderMasterData
 import com.it10x.foodappgstav7_07.data.online.models.TotalSalesReportResult
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Locale
 import kotlin.text.get
 
@@ -18,42 +19,22 @@ class ReportsRepository {
     private val db = FirebaseFirestore.getInstance()
 
     suspend fun getCategorySalesByDate(
-        category: String,
+        categoryId: String,
         startMillis: Long,
         endMillis: Long
     ): CategorySaleData? {
 
-
-
-        val startTimestamp = com.google.firebase.Timestamp(Date(startMillis))
-        val endTimestamp = com.google.firebase.Timestamp(Date(endMillis))
-
-        val snapshot = db.collection("orderProducts")
-            .whereEqualTo("categoryName", category)
-            .whereGreaterThanOrEqualTo("createdAt", startTimestamp)
-            .whereLessThanOrEqualTo("createdAt", endTimestamp)
-            .get()
-            .await()
-
-        val items = snapshot.documents.mapNotNull {
-            it.toObject(OrderProductData::class.java)
-        }
-
-        val qty = items.sumOf { it.quantity }
-        val sales = items.sumOf { it.finalTotalDouble() }
-
-        return CategorySaleData(
-            categoryName = category,
-            totalQty = qty,
-            totalSales = sales
-        )
-    }
-
-    suspend fun getCategorySales(): List<CategorySaleData> {
-
         return try {
 
+            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+
+            val startDate = sdf.format(Date(startMillis))
+            val endDate = sdf.format(Date(endMillis))
+
             val snapshot = db.collection("orderProducts")
+                .whereEqualTo("categoryId", categoryId) // ✅ USE ID
+                .whereGreaterThanOrEqualTo("orderDate", startDate)
+                .whereLessThanOrEqualTo("orderDate", endDate)
                 .get()
                 .await()
 
@@ -61,72 +42,24 @@ class ReportsRepository {
                 it.toObject(OrderProductData::class.java)
             }
 
-            val grouped = items.groupBy { it.categoryName }
+            val qty = items.sumOf { it.quantity }
+            val sales = items.sumOf { it.finalTotalDouble() }
 
-            grouped.map { (category, products) ->
-
-                val qty = products.sumOf { it.quantity }
-                val sales = products.sumOf { it.finalTotalDouble() }
-
-                CategorySaleData(
-                    categoryName = category,
-                    totalQty = qty,
-                    totalSales = sales
-                )
-            }
-
-        } catch (e: Exception) {
-
-            Log.e("REPORTS", "Category sales failed", e)
-            emptyList()
-        }
-    }
-
-    suspend fun getTotalSalesReport_(
-        startMillis: Long,
-        endMillis: Long
-    ): TotalSalesReportResult {
-
-        return try {
-
-            val startTimestamp = Timestamp(Date(startMillis))
-            val endTimestamp = Timestamp(Date(endMillis))
-
-            val snapshot = db.collection("orderMaster") // 🔥 CHANGE if needed
-                .whereGreaterThanOrEqualTo("createdAt", startTimestamp)
-                .whereLessThanOrEqualTo("createdAt", endTimestamp)
-                .whereEqualTo("status", "PAID") // optional but recommended
-                .get()
-                .await()
-
-            var totalSales = 0.0
-            var totalDiscount = 0.0
-            var totalTax = 0.0
-
-            for (doc in snapshot.documents) {
-
-                val grandTotal = doc.getDouble("grandTotal") ?: 0.0
-                val discount = doc.getDouble("discountTotal") ?: 0.0
-                val tax = doc.getDouble("taxTotal") ?: 0.0
-
-                totalSales += grandTotal
-                totalDiscount += discount
-                totalTax += tax
-            }
-
-            TotalSalesReportResult(
-                totalSales = totalSales,
-                totalDiscount = totalDiscount,
-                totalTax = totalTax
+            CategorySaleData(
+                categoryName = items.firstOrNull()?.categoryName ?: "", // ✅ get name safely
+                totalQty = qty,
+                totalSales = sales
             )
 
         } catch (e: Exception) {
-
-            Log.e("REPORTS", "Total sales report failed", e)
-
-            TotalSalesReportResult()
+            e.printStackTrace()
+            null
         }
     }
+
+
+
+
 
     suspend fun getTotalSalesReport(
         startMillis: Long,
@@ -164,4 +97,56 @@ class ReportsRepository {
         )
     }
 
+
+
+    suspend fun getProductSalesByDate(
+        productId: String,
+        startMillis: Long,
+        endMillis: Long
+    ): CategorySaleData? {
+
+        return try {
+
+            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+
+            val startDate = sdf.format(Date(startMillis))
+            val endDate = sdf.format(Date(endMillis))
+
+
+            val snapshot = db.collection("orderProducts")
+                .whereEqualTo("productId", productId)   // ✅ CORRECT NOW
+                .whereGreaterThanOrEqualTo("orderDate", startDate)
+                .whereLessThanOrEqualTo("orderDate", endDate)
+                .get()
+                .await()
+
+            val items = snapshot.documents.mapNotNull {
+                it.toObject(OrderProductData::class.java)
+            }
+
+
+
+            val qty = items.sumOf { it.quantity }
+            val sales = items.sumOf { it.finalTotalDouble() }
+
+            CategorySaleData(
+                categoryName = productId, // you can map name separately
+                totalQty = qty,
+                totalSales = sales
+            )
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+
+
 }
+
+data class ProductSaleData(
+    val productName: String,
+    val totalQty: Int,
+    val totalSales: Double
+)

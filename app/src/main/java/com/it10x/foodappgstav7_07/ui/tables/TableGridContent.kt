@@ -96,7 +96,7 @@ fun TableGridContent(
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(8.dp)
+                            .padding(4.dp)
                     ) {
 
                         Column(
@@ -184,39 +184,43 @@ fun TableGridContent(
                                 }
                             }
 
-                            // CART BADGE SLOT
+                            // CART BADGE SLOT (FULL WIDTH)
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(28.dp)
-                                    .padding(start = 2.dp),
+                                    .padding(horizontal = 2.dp),
                                 contentAlignment = Alignment.CenterStart
                             ) {
                                 if (ui.cartCount > 0) {
                                     StatusBadge(
                                         icon = "🛒",
                                         text = ui.cartCount.toString(),
-                                        bgColor = Color(0xFF1976D2).copy(alpha = 0.6f)
+                                        bgColor = Color(0xFF1976D2).copy(alpha = 0.6f),
+                                        modifier = Modifier.fillMaxWidth() // <- full width
                                     )
                                 }
                             }
 
-                            // BILL BADGE SLOT
+// BILL BADGE SLOT (FULL WIDTH)
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(28.dp)
-                                    .padding(start = 2.dp),
+                                    .padding(horizontal = 2.dp),
                                 contentAlignment = Alignment.CenterStart
                             ) {
                                 if (ui.billDoneCount > 0) {
                                     StatusBadge(
                                         icon = "🧾",
                                         text = ui.billDoneCount.toString(),
-                                        bgColor = Color(0xFF2E7D32).copy(alpha = 0.6f)
+                                        bgColor = Color(0xFF2E7D32).copy(alpha = 0.6f),
+                                        modifier = Modifier.fillMaxWidth() // <- full width
                                     )
                                 }
                             }
+
+
                         }
                     }
                 }

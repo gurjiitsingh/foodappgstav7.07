@@ -34,7 +34,8 @@ import java.util.*
 fun TotalSalesReportScreen(
     viewModel: OnlineReportsViewModel,
     onBack: () -> Unit,
-    onHistoryCategoryReport: () -> Unit
+    onHistoryCategoryReport: () -> Unit,
+    onHistoryProductReport: () -> Unit
 ) {
 
     val context = LocalContext.current
@@ -142,6 +143,13 @@ fun TotalSalesReportScreen(
                 }
             ) {
                 Text("History Category Report")
+            }
+            Button(
+                onClick = {
+                    onHistoryProductReport()
+                }
+            ) {
+                Text("History Product Report")
             }
         }
 
