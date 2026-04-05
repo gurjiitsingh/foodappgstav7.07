@@ -35,7 +35,8 @@ fun TotalSalesReportScreen(
     viewModel: OnlineReportsViewModel,
     onBack: () -> Unit,
     onHistoryCategoryReport: () -> Unit,
-    onHistoryProductReport: () -> Unit
+    onHistoryProductReport: () -> Unit,
+    onHistoryCategoryProductReport: () -> Unit,
 ) {
 
     val context = LocalContext.current
@@ -142,14 +143,23 @@ fun TotalSalesReportScreen(
                     onHistoryCategoryReport()
                 }
             ) {
-                Text("History Category Report")
+                Text("Categorys Report")
             }
             Button(
                 onClick = {
                     onHistoryProductReport()
                 }
             ) {
-                Text("History Product Report")
+                Text("Products Report")
+            }
+
+
+            Button(
+                onClick = {
+                    onHistoryCategoryProductReport()
+                }
+            ) {
+                Text("Category Products Report")
             }
         }
 

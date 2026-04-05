@@ -69,6 +69,7 @@ import com.it10x.foodappgstav7_07.ui.orders.history.OrderItemsScreen
 
 import com.it10x.foodappgstav7_07.ui.pos.PosSessionViewModel
 import com.it10x.foodappgstav7_07.ui.pos.customer.CustomerAddressScreen
+import com.it10x.foodappgstav7_07.ui.reports.CategoryProductReportScreen
 import com.it10x.foodappgstav7_07.ui.reports.CategorySalesScreen
 import com.it10x.foodappgstav7_07.ui.reports.ProductSalesScreen
 import com.it10x.foodappgstav7_07.ui.reports.TotalSalesReportScreen
@@ -472,6 +473,26 @@ fun NavigationHost(
             )
         }
 
+
+
+        composable("category_products_sales") {
+
+            val context = LocalContext.current
+
+            // ✅ Reports ViewModel
+            val reportsViewModel: OnlineReportsViewModel = viewModel(
+                factory = OnlineReportsViewModelFactory(
+                    context.applicationContext as Application
+                )
+            )
+
+            // ✅ Screen (FIXED)
+            CategoryProductReportScreen(
+                navController = navController,
+                viewModel = reportsViewModel
+            )
+        }
+
         composable("total_sales") {
 
             val context = LocalContext.current
@@ -486,7 +507,8 @@ fun NavigationHost(
                 viewModel = reportsViewModel,
                 onBack = { navController.popBackStack() },
                 onHistoryCategoryReport =  { navController.navigate("category_sales") },
-                onHistoryProductReport =  { navController.navigate("products_sales") }
+                onHistoryProductReport =  { navController.navigate("products_sales") },
+                onHistoryCategoryProductReport =  { navController.navigate("category_products_sales") },
             )
 
         }

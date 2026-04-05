@@ -1,18 +1,14 @@
 package com.it10x.foodappgstav7_07.data.online.repository
 
-import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 import com.it10x.foodappgstav7_07.data.online.models.CategorySaleData
-import com.it10x.foodappgstav7_07.data.online.models.OrderProductData
-import kotlinx.coroutines.tasks.await
-import java.util.Date
-import com.google.firebase.Timestamp
 import com.it10x.foodappgstav7_07.data.online.models.OrderMasterData
+import com.it10x.foodappgstav7_07.data.online.models.OrderProductData
 import com.it10x.foodappgstav7_07.data.online.models.TotalSalesReportResult
+import kotlinx.coroutines.tasks.await
 import java.text.SimpleDateFormat
-import java.util.Calendar
+import java.util.Date
 import java.util.Locale
-import kotlin.text.get
 
 class ReportsRepository {
 
@@ -142,10 +138,67 @@ class ReportsRepository {
     }
 
 
+    suspend fun getCategoryProductReport(
+        categoryId: String,
+        startMillis: Long,
+        endMillis: Long
+    ): List<ProductSaleDataInCat> {
+
+        return try {
+
+            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+
+            val startDate = sdf.format(Date(startMillis))
+            val endDate = sdf.format(Date(endMillis))
+
+            val snapshot = db.collection("orderProducts")
+                .whereEqualTo("categoryId", categoryId)
+                .whereGreaterThanOrEqualTo("orderDate", startDate)
+                .whereLessThanOrEqualTo("orderDate", endDate)
+                .get()
+                .await()
+
+            val items = snapshot.documents.mapNotNull {
+                it.toObject(OrderProductData::class.java)
+            }
+
+            // 🔥 GROUPING
+            val grouped = items.groupBy { it.id }
+
+            grouped.map { (_, list) ->
+
+                val name = list.first().name
+
+                val qty = list.sumOf { it.quantity }
+                val total = list.sumOf { it.finalTotalDouble() }
+
+                ProductSaleDataInCat(
+                    productId = list.first().id,   // ✅ FIXED
+                    productName = name,
+                    totalQty = qty,
+                    totalSales = total
+                )
+            }.sortedByDescending { it.totalSales }
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList()
+        }
+    }
+
+
 
 }
 
 data class ProductSaleData(
+    val productName: String,
+    val totalQty: Int,
+    val totalSales: Double
+)
+
+
+data class ProductSaleDataInCat(
+    val productId: String,
     val productName: String,
     val totalQty: Int,
     val totalSales: Double

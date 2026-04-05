@@ -11,6 +11,7 @@ import com.it10x.foodappgstav7_07.data.online.repository.ReportsRepository
 import com.it10x.foodappgstav7_07.data.pos.AppDatabaseProvider
 import com.it10x.foodappgstav7_07.data.pos.dao.CategoryDao
 import com.it10x.foodappgstav7_07.data.pos.entities.CategoryEntity
+import com.it10x.foodappgstav7_07.ui.reports.model.ProductReportItem
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -20,6 +21,11 @@ import java.util.Calendar
 class OnlineReportsViewModel(
     application: Application
 ) : AndroidViewModel(application) {
+
+    private val _categoryProductReport =
+        MutableStateFlow<List<ProductReportItem>>(emptyList())
+    val categoryProductReport: StateFlow<List<ProductReportItem>> =
+        _categoryProductReport
 
     private val repo = ReportsRepository()
     private val categoryDao =
@@ -199,6 +205,44 @@ class OnlineReportsViewModel(
             }
         }
     }
+
+    fun loadCategoryProductReport(
+        categoryId: String,
+        startMillis: Long,
+        endMillis: Long
+    ) {
+        viewModelScope.launch {
+
+            if (_loading.value) return@launch
+
+            _loading.value = true
+
+            try {
+
+                val result = repo.getCategoryProductReport(
+                    categoryId,
+                    startMillis,
+                    endMillis
+                )
+
+                _categoryProductReport.value = result.map {
+                    ProductReportItem(
+                        productId = "", // optional
+                        name = it.productName,
+                        qty = it.totalQty,
+                        total = it.totalSales
+                    )
+                }
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+                _categoryProductReport.value = emptyList()
+            } finally {
+                _loading.value = false
+            }
+        }
+    }
+
 
 
 
