@@ -21,6 +21,7 @@ import com.it10x.foodappgstav7_07.viewmodel.OnlineReportsViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 import android.app.DatePickerDialog
+import android.util.Log
 import androidx.compose.ui.platform.LocalContext
 import com.it10x.foodappgstav7_07.printer.PrinterManager
 import com.it10x.foodappgstav7_07.data.PrinterRole
@@ -74,6 +75,7 @@ fun CategorySalesScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .padding(16.dp)
+
         ) {
 
             Row(
@@ -230,23 +232,36 @@ fun CategorySalesScreen(
                                 )
                             }
 
-                            Button(
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color(0xFF2E7D32),
-                                    contentColor = Color.White
-                                ),
-                                onClick = {
-                                    printer.printCategorySummary(
-                                        PrinterRole.BILLING,
-                                        selectedCategoryName,
-                                        qty,
-                                        totalSales
-                                    )
-                                }
-                            ) {
-                                Text("Print")
-                            }
+
                         }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(20.dp))
+            if (!loading && !(qty == 0 && totalSales == 0.0)) {
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    Button(
+                        modifier = Modifier
+                            .widthIn(max = 300.dp)   // 👈 limits size on tablets
+                            .fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF2E7D32),
+                            contentColor = Color.White
+                        ),
+                        onClick = {
+                            printer.printCategorySummary(
+                                PrinterRole.BILLING,
+                                selectedCategoryName,
+                                qty,
+                                totalSales
+                            )
+                        }
+                    ) {
+                        Text("Print")
                     }
                 }
             }

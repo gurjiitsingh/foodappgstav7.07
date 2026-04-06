@@ -504,6 +504,12 @@ class PrinterManager(
         onResult: (Boolean) -> Unit = {}
     ) {
 
+        Log.e(
+            "PRINTTEST",
+            "\n================= 2 ==================================================================="
+        )
+
+
         val config = prefs.getPrinterConfig(role)
         if (config == null) {
             onResult(false)
@@ -524,7 +530,10 @@ class PrinterManager(
             info,
             width
         )
-
+        Log.e(
+            "PRINTTEST",
+            "\n================= KITCHEN RECEIPT =================\n$text\n=================================================="
+        )
         printText(role, text, onResult)
     }
 
