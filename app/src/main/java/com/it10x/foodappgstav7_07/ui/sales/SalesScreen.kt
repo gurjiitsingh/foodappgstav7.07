@@ -103,7 +103,6 @@ fun SalesScreen(
 
 
 
-
             Spacer(modifier = Modifier.weight(1f))
 
             Button(
