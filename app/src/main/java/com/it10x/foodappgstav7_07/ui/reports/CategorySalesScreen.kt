@@ -25,6 +25,7 @@ import android.util.Log
 import androidx.compose.ui.platform.LocalContext
 import com.it10x.foodappgstav7_07.printer.PrinterManager
 import com.it10x.foodappgstav7_07.data.PrinterRole
+import com.it10x.foodappgstav7_07.printer.PrintJob
 
 @Composable
 fun CategorySalesScreen(
@@ -253,11 +254,14 @@ fun CategorySalesScreen(
                             contentColor = Color.White
                         ),
                         onClick = {
-                            printer.printCategorySummary(
-                                PrinterRole.BILLING,
-                                selectedCategoryName,
-                                qty,
-                                totalSales
+                            printer.print(
+                                PrintJob.CategorySummary(
+                                    category = selectedCategoryName,
+                                    qty = qty,
+                                    amount = totalSales,
+                                    fromMillis = startDate,
+                                    toMillis = endDate
+                                )
                             )
                         }
                     ) {

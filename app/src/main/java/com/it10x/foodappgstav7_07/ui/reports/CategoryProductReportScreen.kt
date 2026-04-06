@@ -21,6 +21,9 @@ import com.it10x.foodappgstav7_07.viewmodel.OnlineReportsViewModel
 import com.it10x.foodappgstav7_07.ui.reports.model.ProductReportItem
 import java.text.SimpleDateFormat
 import java.util.*
+import com.it10x.foodappgstav7_07.printer.PrinterManager
+import com.it10x.foodappgstav7_07.data.PrinterRole
+import com.it10x.foodappgstav7_07.printer.PrintJob
 
 @Composable
 fun CategoryProductReportScreen(
@@ -29,7 +32,7 @@ fun CategoryProductReportScreen(
 ) {
 
     val context = LocalContext.current
-
+    val printer = remember { PrinterManager(context) }
     // ---------------- DATE ----------------
     val startCalendar = Calendar.getInstance().apply {
         set(Calendar.HOUR_OF_DAY, 0)
@@ -167,6 +170,39 @@ fun CategoryProductReportScreen(
                             CategoryProductRow(item)
                         }
                     }
+
+                    Spacer(Modifier.height(20.dp))
+
+                    if (!loading && reportList.isNotEmpty()) {
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.CenterStart   // 👈 LEFT ALIGN
+                        ) {
+                            Button(
+                                modifier = Modifier
+                                    .widthIn(max = 300.dp)
+                                    .fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF2E7D32),
+                                    contentColor = Color.White
+                                ),
+                                onClick = {
+                                    printer.print(
+                                        PrintJob.CategoryProductReport(
+                                            category = selectedCategoryName,
+                                            items = reportList,
+                                            fromMillis = startDate,
+                                            toMillis = endDate
+                                        )
+                                    )
+                                }
+                            ) {
+                                Text("Print")
+                            }
+                        }
+                    }
+
+
                 }
             }
 

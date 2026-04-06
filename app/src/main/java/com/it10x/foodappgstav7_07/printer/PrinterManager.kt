@@ -17,6 +17,8 @@ import com.it10x.foodappgstav7_07.ui.sales.SalesUiState
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
+import com.it10x.foodappgstav7_07.printer.PrintJob
+import kotlinx.coroutines.runBlocking
 
 
 class PrinterManager(
@@ -25,6 +27,187 @@ class PrinterManager(
 
     private val prefs by lazy { PrinterPreferences(context) }
     fun appContext(): Context = context.applicationContext
+
+
+    // --------------------------------
+    // NEW PRINT JOB STRATAGY
+    // --------------------------------
+
+
+    fun print(job: PrintJob, onResult: (Boolean) -> Unit = {}) {
+        when (job) {
+
+            is PrintJob.SalesReport -> {
+
+                val size = prefs.getPrinterSize(PrinterRole.BILLING) ?: "80mm"
+                val width = if (size == "80mm") 48 else 32
+
+                val outletDao = AppDatabaseProvider.get(context).outletDao()
+                val outletEntity = runBlocking { outletDao.getOutlet() }
+                val info = OutletMapper.fromEntity(outletEntity)
+
+                val text = ReceiptFormatter.salesFullReport(
+                    state = job.state,
+                    info = info,
+                    width = width,
+                    printMillis = job.printMillis
+                )
+
+                printText(PrinterRole.BILLING, text)
+            }
+
+
+            is PrintJob.CategoryWiseSalesReport -> {
+
+                val size = prefs.getPrinterSize(PrinterRole.BILLING) ?: "80mm"
+                val width = if (size == "80mm") 48 else 32
+
+                val outletDao = AppDatabaseProvider.get(context).outletDao()
+                val outletEntity = runBlocking { outletDao.getOutlet() }
+                val info = OutletMapper.fromEntity(outletEntity)
+
+                val text = ReceiptFormatter.categoryWiseSalesReport(
+                    categorySales = job.categorySales,
+                    info = info,
+                    width = width,
+                    fromMillis = job.fromMillis,
+                    toMillis = job.toMillis,
+                    printMillis = job.printMillis
+                )
+
+                printText(PrinterRole.BILLING, text)
+            }
+
+            is PrintJob.SingleCategoryDetail -> {
+                val size = prefs.getPrinterSize(PrinterRole.BILLING) ?: "80mm"
+                val width = if (size == "80mm") 48 else 32
+
+                val outletDao = AppDatabaseProvider.get(context).outletDao()
+                val outletEntity = runBlocking { outletDao.getOutlet() }
+                val info = OutletMapper.fromEntity(outletEntity)
+
+                val text = ReceiptFormatter.salesBySingleCategory(
+                    category = job.category,
+                    items = job.items,
+                    outletInfo = info,
+                    width = width,
+                    fromMillis = job.fromMillis,
+                    toMillis = job.toMillis,
+                    printMillis = job.printMillis
+                )
+
+                printText(PrinterRole.BILLING, text)
+            }
+
+            // ✅ NEW: Category Summary
+//            is PrintJob.SingleCategorySummary -> {
+//                printCategorySummary(
+//                    PrinterRole.BILLING,
+//                    job.category,
+//                    job.qty,
+//                    job.amount
+//                )
+//            }
+
+            is PrintJob.TotalSalesReport -> {
+
+                val size = prefs.getPrinterSize(PrinterRole.BILLING) ?: "80mm"
+                val width = if (size == "80mm") 48 else 32
+
+                val outletDao = AppDatabaseProvider.get(context).outletDao()
+                val outletEntity = runBlocking { outletDao.getOutlet() }
+                val info = OutletMapper.fromEntity(outletEntity)
+
+                val text = ReceiptFormatter.totalSalesReport(
+                    beforeDiscount = job.beforeDiscount,
+                    discount = job.discount,
+                    afterDiscount = job.afterDiscount,
+                    tax = job.tax,
+                    info = info,
+                    width = width,
+                    fromMillis = job.fromMillis,
+                    toMillis = job.toMillis,
+                    printMillis = job.printMillis
+                )
+
+                printText(PrinterRole.BILLING, text)
+            }
+
+
+            is PrintJob.CategorySummary -> {
+
+                val size = prefs.getPrinterSize(PrinterRole.BILLING) ?: "80mm"
+                val width = if (size == "80mm") 48 else 32
+
+                val outletDao = AppDatabaseProvider.get(context).outletDao()
+                val outletEntity = runBlocking { outletDao.getOutlet() }
+                val info = OutletMapper.fromEntity(outletEntity)
+
+                val text = ReceiptFormatter.salesCategorySummary(
+                    category = job.category,
+                    totalQty = job.qty,
+                    totalAmount = job.amount,
+                    info = info,
+                    width = width,
+                    fromMillis = job.fromMillis,
+                    toMillis = job.toMillis,
+                    printMillis = job.printMillis
+                )
+
+                printText(PrinterRole.BILLING, text)
+            }
+
+            is PrintJob.ProductSummary -> {
+                val size = prefs.getPrinterSize(PrinterRole.BILLING) ?: "80mm"
+                val width = if (size == "80mm") 48 else 32
+
+                val outletDao = AppDatabaseProvider.get(context).outletDao()
+                val outletEntity = runBlocking { outletDao.getOutlet() }
+                val info = OutletMapper.fromEntity(outletEntity)
+
+                val text = ReceiptFormatter.salesProductSummary(
+                    product = job.product,
+                    qty = job.qty,
+                    amount = job.amount,
+                    info = info,
+                    width = width,
+                    fromMillis = job.fromMillis,
+                    toMillis = job.toMillis,
+                    printMillis = job.printMillis
+                )
+
+                printText(PrinterRole.BILLING, text)
+            }
+
+            // ✅ ADD THIS BLOCK
+            is PrintJob.CategoryProductReport -> {
+
+                val size = prefs.getPrinterSize(PrinterRole.BILLING) ?: "80mm"
+                val width = if (size == "80mm") 48 else 32
+
+                val outletDao = AppDatabaseProvider.get(context).outletDao()
+                val outletEntity = runBlocking { outletDao.getOutlet() }
+                val info = OutletMapper.fromEntity(outletEntity)
+
+                val text = ReceiptFormatter.salesCategoryProductList(
+                    category = job.category,
+                    items = job.items,
+                    outletInfo = info,
+                    width = width,
+                    fromMillis = job.fromMillis,
+                    toMillis = job.toMillis,
+                    printMillis = job.printMillis
+                )
+
+                printText(PrinterRole.BILLING, text)
+            }
+        }
+    }
+
+
+
+
+
     // --------------------------------
     // TEST PRINT (already OK)
     // --------------------------------
@@ -200,10 +383,6 @@ class PrinterManager(
 
 
 
-//        Log.d(
-//            "PRINT_NEW",
-//            "Outlet Entity = $outletEntity   $info"
-//        )
 
         // ✅ Select format based on printer page size
         val receiptText = when (size) {
@@ -212,12 +391,6 @@ class PrinterManager(
         }
 
 
-
-
-//        Log.d(
-//            "PRINT_NEW",
-//            "${info.defaultCurrency} Printer type=${config.type}, size=$pageSize, bluetooth=${config.bluetoothAddress}, ip=${config.ip}, "
-//        )
         Log.e(
             "PRINTTEST",
             "\n================= BILL NEWTEXT =================\n$receiptText\n=================================================="
@@ -295,9 +468,6 @@ class PrinterManager(
 
         // ✅ Auto-load outlet info if not provided
 
-        //  val outletDao = AppDatabaseProvider.get(context).outletDao()
-        //  val outletEntity = runBlocking { outletDao.getOutlet() }
-        //  val info = OutletMapper.fromEntity(outletEntity)
         val info = outletInfo
 
 
@@ -313,12 +483,6 @@ class PrinterManager(
         }
 
 
-
-
-//        Log.d(
-//            "PRINT_NEW",
-//            "${info.defaultCurrency} Printer type=${config.type}, size=$pageSize, bluetooth=${config.bluetoothAddress}, ip=${config.ip}, "
-//        )
         Log.e(
             "PRINTTEST",
             "\n================= BILL NEWTEXT =================\n$receiptText\n=================================================="
@@ -380,9 +544,7 @@ class PrinterManager(
         items: List<PosKotItemEntity>,
         onResult: (Boolean) -> Unit = {}
     ) {
-//        Log.d("SYNC_DEBUG", "PRINT CALLED")
-//        Log.e("KOT", "STEP 1 → Role=$role")
-//        Log.e("KOT", "STEP 2 → Items size=${items.size}")
+
         val config = prefs.getPrinterConfig(role)
         if (config == null) {
             Log.e("PRINTTEST", "No printer configured for role=$role")
@@ -496,77 +658,75 @@ class PrinterManager(
     }
 
 
-    fun printCategorySummary(
-        role: PrinterRole,
-        category: String,
-        totalQty: Int,
-        totalAmount: Double,
-        onResult: (Boolean) -> Unit = {}
-    ) {
-
-        Log.e(
-            "PRINTTEST",
-            "\n================= 2 ==================================================================="
-        )
-
-
-        val config = prefs.getPrinterConfig(role)
-        if (config == null) {
-            onResult(false)
-            return
-        }
-
-        val size = prefs.getPrinterSize(role) ?: "80mm"
-        val width = if (size == "80mm") 48 else 32
-
-        val outletDao = AppDatabaseProvider.get(context).outletDao()
-        val outletEntity = runBlocking { outletDao.getOutlet() }
-        val info = OutletMapper.fromEntity(outletEntity)
-
-        val text = ReceiptFormatter.salesCategorySummary(
-            category,
-            totalQty,
-            totalAmount,
-            info,
-            width
-        )
-        Log.e(
-            "PRINTTEST",
-            "\n================= KITCHEN RECEIPT =================\n$text\n=================================================="
-        )
-        printText(role, text, onResult)
-    }
+//    fun printCategorySummary(
+//        role: PrinterRole,
+//        category: String,
+//        totalQty: Int,
+//        totalAmount: Double,
+//        onResult: (Boolean) -> Unit = {}
+//    ) {
+//
+//
+//
+//
+//
+//        val config = prefs.getPrinterConfig(role)
+//        if (config == null) {
+//            onResult(false)
+//            return
+//        }
+//
+//        val size = prefs.getPrinterSize(role) ?: "80mm"
+//        val width = if (size == "80mm") 48 else 32
+//
+//        val outletDao = AppDatabaseProvider.get(context).outletDao()
+//        val outletEntity = runBlocking { outletDao.getOutlet() }
+//        val info = OutletMapper.fromEntity(outletEntity)
+//
+//        val text = ReceiptFormatter.salesCategorySummary(
+//            category,
+//            totalQty,
+//            totalAmount,
+//            info,
+//            width
+//        )
+//
+//        val debugText = text.replace(Regex("[\\x00-\\x1F]"), "\n================= KITCHEN RECEIPT =================\n$text\n==================================================")
+//        Log.e("PRINTTEST", debugText)
+//
+//        printText(role, text, onResult)
+//    }
 
 
-    fun printSingleCategorySales(
-        role: PrinterRole,
-        category: String,
-        items: Map<String, Pair<Int, Double>>,
-        onResult: (Boolean) -> Unit = {}
-    ) {
-
-        val config = prefs.getPrinterConfig(role)
-        if (config == null) {
-            onResult(false)
-            return
-        }
-
-        val size = prefs.getPrinterSize(role) ?: "80mm"
-        val width = if (size == "80mm") 48 else 32
-
-        val outletDao = AppDatabaseProvider.get(context).outletDao()
-        val outletEntity = runBlocking { outletDao.getOutlet() }
-        val info = OutletMapper.fromEntity(outletEntity)
-
-        val text = ReceiptFormatter.salesBySingleCategory(
-            category,
-            items,
-            info,
-            width
-        )
-
-        printText(role, text, onResult)
-    }
+//    fun printSingleCategorySales(
+//        role: PrinterRole,
+//        category: String,
+//        items: Map<String, Pair<Int, Double>>,
+//        onResult: (Boolean) -> Unit = {}
+//    ) {
+//
+//        val config = prefs.getPrinterConfig(role)
+//        if (config == null) {
+//            onResult(false)
+//            return
+//        }
+//
+//        val size = prefs.getPrinterSize(role) ?: "80mm"
+//        val width = if (size == "80mm") 48 else 32
+//
+//        val outletDao = AppDatabaseProvider.get(context).outletDao()
+//        val outletEntity = runBlocking { outletDao.getOutlet() }
+//        val info = OutletMapper.fromEntity(outletEntity)
+//
+//        val text = ReceiptFormatter.salesBySingleCategory(
+//            category,
+//            items,
+//            info,
+//            width
+//        )
+//
+//        printText(role, text, onResult)
+//    }
 
 
 

@@ -28,6 +28,8 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import com.it10x.foodappgstav7_07.printer.PrintJob
+import com.it10x.foodappgstav7_07.printer.PrinterManager
 import java.text.SimpleDateFormat
 import java.util.*
 @Composable
@@ -177,5 +179,30 @@ fun TotalSalesReportScreen(
                 SummaryRow("Tax", totalTax)
             }
         }
+
+
+        val printer = remember { PrinterManager(context) }
+
+        if (!loading) {
+            Button(
+                onClick = {
+                    printer.print(
+                        PrintJob.TotalSalesReport(
+                            beforeDiscount = totalBefore,
+                            discount = totalDiscount,
+                            afterDiscount = totalSales,
+                            tax = totalTax,
+                            fromMillis = startDate,
+                            toMillis = endDate
+                        )
+                    )
+                }
+            ) {
+                Text("Print")
+            }
+        }
+
+
+
     }
 }

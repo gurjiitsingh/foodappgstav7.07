@@ -17,6 +17,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
 import com.it10x.foodappgstav7_07.ui.components.CategoryPickerDialog
 import com.it10x.foodappgstav7_07.data.pos.entities.CategoryEntity
+import com.it10x.foodappgstav7_07.printer.PrintJob
+import com.it10x.foodappgstav7_07.printer.PrinterManager
 import com.it10x.foodappgstav7_07.viewmodel.OnlineReportsViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -213,6 +215,42 @@ fun ProductSalesScreen(
                     }
                 }
             }
+
+
+
+
+
+            Spacer(Modifier.height(20.dp))
+
+            if (!loading && !(qty == 0 && totalSales == 0.0)) {
+
+                val printer = remember { PrinterManager(context) }
+
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    Button(
+                        modifier = Modifier
+                            .widthIn(max = 300.dp)
+                            .fillMaxWidth(),
+                        onClick = {
+                            printer.print(
+                                PrintJob.ProductSummary(
+                                    product = selectedProductName,
+                                    qty = qty,
+                                    amount = totalSales,
+                                    fromMillis = startDate,
+                                    toMillis = endDate
+                                )
+                            )
+                        }
+                    ) {
+                        Text("Print")
+                    }
+                }
+            }
+
 
             // ================= CATEGORY DIALOG =================
             if (showCategoryDialog) {

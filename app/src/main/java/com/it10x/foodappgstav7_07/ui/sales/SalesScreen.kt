@@ -15,6 +15,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.it10x.foodappgstav7_07.data.PrinterRole
 import com.it10x.foodappgstav7_07.data.pos.entities.PosOrderMasterEntity
+import com.it10x.foodappgstav7_07.printer.PrintJob
 import com.it10x.foodappgstav7_07.printer.ReceiptFormatter
 import java.text.SimpleDateFormat
 import java.util.*
@@ -100,16 +101,7 @@ fun SalesScreen(
 
 
 
-            Button(
-                onClick = {
-                    printer.printSalesReport(
-                        PrinterRole.BILLING,
-                        uiState
-                    )
-                }
-            ) {
-                Text("Print Report")
-            }
+
 
 
             Spacer(modifier = Modifier.weight(1f))
@@ -148,6 +140,7 @@ fun SalesScreen(
             } else {
 
                 // SUMMARY
+                // SUMMARY
                 item {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
@@ -158,7 +151,6 @@ fun SalesScreen(
                             Text("Summary", style = MaterialTheme.typography.titleMedium)
                             Spacer(Modifier.height(8.dp))
 
-// ---------------- MAIN TOTALS ----------------
                             SummaryRow("Total Before Discount", uiState.totalBeforeDiscount)
                             SummaryRow("Total Discount", uiState.discountTotal)
                             SummaryRow("Total Sales (All Orders)", uiState.totalSales)
@@ -166,7 +158,6 @@ fun SalesScreen(
 
                             Spacer(Modifier.height(8.dp))
 
-// ---------------- CREDIT / RECEIVED ----------------
                             SummaryRow("Received Amount", uiState.receivedTotal)
                             SummaryRow("Credit Pending", uiState.creditTotal)
 
@@ -176,12 +167,13 @@ fun SalesScreen(
 
                             Spacer(Modifier.height(8.dp))
 
-// ---------------- PAYMENT BREAKUP ----------------
                             uiState.paymentBreakup.forEach { (type, amount) ->
                                 SummaryRow(type, amount)
                             }
                         }
                     }
+
+
                 }
 
                 // GROUPED SALES
@@ -199,6 +191,29 @@ fun SalesScreen(
                     }
                 }
 
+                // ✅ PRINT BUTTON (ADD HERE)
+                item {
+
+                    Spacer(Modifier.height(10.dp))
+
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        Button(
+                            modifier = Modifier
+                                .widthIn(max = 300.dp)   // 👈 limits width
+                                .fillMaxWidth(),
+                            onClick = {
+                                printer.print(
+                                    PrintJob.SalesReport(uiState)
+                                )
+                            }
+                        ) {
+                            Text("Print Report")
+                        }
+                    }
+                }
                 // CATEGORY BREAKDOWN
                 item {
                     Column {
@@ -208,7 +223,32 @@ fun SalesScreen(
                         Spacer(Modifier.height(6.dp))
                     }
                 }
+                item {
 
+                    Spacer(Modifier.height(8.dp))
+
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        Button(
+                            modifier = Modifier
+                                .widthIn(max = 300.dp)
+                                .fillMaxWidth(),
+                            onClick = {
+                                printer.print(
+                                    PrintJob.CategoryWiseSalesReport(
+                                        categorySales = uiState.categorySales,
+                                        fromMillis = uiState.from,
+                                        toMillis = uiState.to
+                                    )
+                                )
+                            }
+                        ) {
+                            Text("Print All Category Sales")
+                        }
+                    }
+                }
 
 
                 items(uiState.categorySales.toList()) { (category, data) ->
@@ -224,49 +264,61 @@ fun SalesScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(10.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
 
-                            Column {
+                            // ✅ LEFT SIDE (takes full width)
+                            Column(
+                                modifier = Modifier.weight(1f)
+                            ) {
                                 Text(category)
                                 Text("Qty: $qty")
                                 Text("₹ %.2f".format(amount))
                             }
 
-                            Button(
-                                onClick = {
-                                    val items =
-                                        uiState.itemSales[category] ?: emptyMap()
-
-                                    printer.printSingleCategorySales(
-                                        PrinterRole.BILLING,
-                                        category,
-                                        items
-                                    )
-                                }
+                            // ✅ RIGHT SIDE (buttons aligned right)
+                            Column(
+                                horizontalAlignment = Alignment.End
                             ) {
-                                Text("Print Detail")
-                            }
-                            Button(
-                                onClick = {
 
-                                    val data = uiState.categorySales[category]
+                                Button(
+                                    onClick = {
+                                        val items = uiState.itemSales[category] ?: emptyMap()
 
-                                    if (data != null) {
-                                        val totalQty = data.first
-                                        val totalAmount = data.second
-
-                                        printer.printCategorySummary(
-                                            PrinterRole.BILLING,
-                                            category,
-                                            totalQty,
-                                            totalAmount
+                                        printer.print(
+                                            PrintJob.SingleCategoryDetail(
+                                                category = category,
+                                                items = items,
+                                                fromMillis = uiState.from,
+                                                toMillis = uiState.to
+                                            )
                                         )
                                     }
+                                ) {
+                                    Text("Print Detail")
                                 }
-                            ) {
-                                Text("Print Summary")
+
+                                Spacer(Modifier.height(6.dp))
+
+//                                Button(
+//                                    onClick = {
+//                                        val data = uiState.categorySales[category]
+//
+//                                        if (data != null) {
+//                                            printer.print(
+//                                                PrintJob.SingleCategorySummary(
+//                                                    category = category,
+//                                                    qty = data.first,
+//                                                    amount = data.second,
+//                                                    fromMillis = uiState.from,
+//                                                    toMillis = uiState.to
+//                                                )
+//                                            )
+//                                        }
+//                                    }
+//                                ) {
+//                                    Text("Print Summary")
+//                                }
                             }
                         }
                     }
@@ -301,43 +353,3 @@ private fun SummaryRow(label: String, value: Double) {
     }
 }
 
-//@Composable
-//private fun SalesOrderRow(order: PosOrderMasterEntity) {
-//
-//    val time = remember(order.createdAt) {
-//        SimpleDateFormat(
-//            "dd MMM yyyy, hh:mm a",
-//            Locale.getDefault()
-//        ).format(Date(order.createdAt))
-//    }
-//
-//    Card(
-//        modifier = Modifier
-//            .fillMaxWidth()
-//            .padding(vertical = 4.dp),
-//        elevation = CardDefaults.cardElevation(2.dp)
-//    ) {
-//        Column(modifier = Modifier.padding(10.dp)) {
-//
-//            Row(
-//                modifier = Modifier.fillMaxWidth(),
-//                horizontalArrangement = Arrangement.SpaceBetween
-//            ) {
-//                Text("Order #${order.srno}")
-//                Text("₹ %.2f".format(order.grandTotal))
-//            }
-//
-//            Spacer(Modifier.height(4.dp))
-//
-//            Text(
-//                "${order.orderType} • ${order.paymentMode}",
-//                style = MaterialTheme.typography.bodySmall
-//            )
-//
-//            Text(
-//                time,
-//                style = MaterialTheme.typography.bodySmall
-//            )
-//        }
-//    }
-//}

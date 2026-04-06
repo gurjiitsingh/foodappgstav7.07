@@ -4,6 +4,9 @@ import android.util.Log
 import com.it10x.foodappgstav7_07.data.pos.entities.PosKotItemEntity
 import com.it10x.foodappgstav7_07.data.print.OutletInfo
 import com.it10x.foodappgstav7_07.ui.sales.SalesUiState
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 // -----------------------------
 // PRINT MODELS (ONE TRUTH)
@@ -146,13 +149,6 @@ Thank You!
 
             val divider = "-".repeat(LINE_WIDTH)
 
-//            val lines = order.items.joinToString("\n") { item ->
-//                val qty = item.quantity.toString().padEnd(4)
-//                val name = item.name.take(26).padEnd(26)
-//                val price = format(item.price).padStart(8)
-//                val total = format(item.subtotal).padStart(10)
-//                qty + name + price + total
-//            }
 
             val lines = buildString {
 
@@ -246,58 +242,6 @@ Thank You!
 ------------------------
 $itemsBlock
 ------------------------
-
-
-""".trimIndent()
-            )
-        }
-    }
-    fun kitchen1(order: PrintOrder, title: String = "KITCHEN"): String {
-
-        val itemsBlock = if (order.items.isEmpty()) {
-            "No items"
-        } else {
-            order.items.joinToString("\n") {
-                "${it.quantity.toString().padEnd(3)} ${it.name}"
-            }
-        }
-
-        return buildString {
-            append(ALIGN_LEFT)
-            append(
-                """
-******** $title ********
-Order No : ${order.orderNo}
-------------------------
-$itemsBlock
-------------------------
-
-
-""".trimIndent()
-            )
-        }
-    }
-
-
-
-    fun kitchen83(order: PrintOrder, title: String = "KITCHEN"): String {
-        val itemsBlock = if (order.items.isEmpty()) {
-            "No items"
-        } else {
-            order.items.joinToString("\n") {
-                "${it.quantity.toString().padEnd(4)} ${it.name}"
-            }
-        }
-
-        return buildString {
-            append(ALIGN_LEFT)
-            append(
-                """
-******** $title ********
-Order No : ${order.orderNo}
-${"-".repeat(48)}
-$itemsBlock
-${"-".repeat(48)}
 
 
 """.trimIndent()
@@ -444,12 +388,7 @@ ${"-".repeat(48)}
                 }
             }
 
-//        val modifiers = Gson().fromJson(
-//            item.modifiersJson,
-//            Array<String>::class.java
-//        )
-//        Instead of manual split.
-//        But current version works fine.
+
 
 
         return buildString {
@@ -529,12 +468,7 @@ ${"-".repeat(48)}
                 }
             }
 
-//        val modifiers = Gson().fromJson(
-//            item.modifiersJson,
-//            Array<String>::class.java
-//        )
-//        Instead of manual split.
-//        But current version works fine.
+
 
 
         return buildString {
@@ -793,6 +727,8 @@ Thank You!
             return safeLabel + " ".repeat(if (space > 0) space else 1) + value
         }
 
+
+
         val header = buildOutletHeader(outletInfo, width)
 
         return buildString {
@@ -812,15 +748,18 @@ Thank You!
         }
     }
 
-
     fun salesBySingleCategory(
         category: String,
         items: Map<String, Pair<Int, Double>>,
         outletInfo: OutletInfo,
-        width: Int
+        width: Int,
+        fromMillis: Long,
+        toMillis: Long,
+        printMillis: Long = System.currentTimeMillis()
     ): String {
 
         val divider = "-".repeat(width)
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
 
         fun line(label: String, value: String): String {
             val safeLabel = label.take(width - value.length - 1)
@@ -832,12 +771,25 @@ Thank You!
 
         return buildString {
 
-            append("\u001B\u0061\u0000")
+            var totalQty = 0
+            var totalAmount = 0.0
+
+            append("\u001B\u0061\u0001") // center
             append(header + "\n")
             append(divider + "\n")
+
             append("CATEGORY REPORT\n")
             append(category.uppercase() + "\n")
+
             append(divider + "\n")
+
+            append("From : ${dateFormat.format(Date(fromMillis))}\n")
+            append("To   : ${dateFormat.format(Date(toMillis))}\n")
+            append("Printed : ${dateFormat.format(Date(printMillis))}\n")
+
+            append(divider + "\n")
+
+            append("\u001B\u0061\u0000") // left
 
             if (items.isEmpty()) {
                 append("No sales data\n")
@@ -849,6 +801,9 @@ Thank You!
                     val total = data.second
                     val rate = if (qty > 0) total / qty else 0.0
 
+                    totalQty += qty
+                    totalAmount += total
+
                     append(itemName.take(width) + "\n")
 
                     val qtyRate = "$qty x %.2f".format(rate)
@@ -859,10 +814,406 @@ Thank You!
                 }
             }
 
+            append(divider + "\n")
+
+            // ✅ TOTAL SECTION (NEW)
+            append(line("TOTAL QTY", totalQty.toString()) + "\n")
+            append(line("TOTAL AMOUNT", "%.2f".format(totalAmount)) + "\n")
+
             append(divider + "\n\n")
         }
     }
 
+
+    fun salesCategorySummary(
+        category: String,
+        totalQty: Int,
+        totalAmount: Double,
+        info: OutletInfo,
+        width: Int,
+        fromMillis: Long,
+        toMillis: Long,
+        printMillis: Long = System.currentTimeMillis()
+    ): String {
+
+        val divider = "-".repeat(width)
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+
+        fun line(label: String, value: String): String {
+            val safeLabel = label.take(width - value.length - 1)
+            val space = width - safeLabel.length - value.length
+            return safeLabel + " ".repeat(if (space > 0) space else 1) + value
+        }
+
+        return buildString {
+
+            append("\u001B\u0061\u0001") // center
+
+            append(info.name + "\n")
+            append(divider + "\n")
+
+            append("CATEGORY SUMMARY\n")
+            append(category.uppercase() + "\n")
+
+            append(divider + "\n")
+
+            append("From : ${dateFormat.format(Date(fromMillis))}\n")
+            append("To   : ${dateFormat.format(Date(toMillis))}\n")
+            append("Printed : ${dateFormat.format(Date(printMillis))}\n")
+
+            append(divider + "\n")
+
+            append("\u001B\u0061\u0000") // left
+
+            append(line("Total Qty", totalQty.toString()) + "\n")
+            append(line("Total Amount", "%.2f".format(totalAmount)) + "\n")
+
+            append(divider + "\n\n")
+        }
+    }
+
+    fun salesProductSummary(
+        product: String,
+        qty: Int,
+        amount: Double,
+        info: OutletInfo,
+        width: Int,
+        fromMillis: Long,
+        toMillis: Long,
+        printMillis: Long
+    ): String {
+
+        val sdfDate = java.text.SimpleDateFormat("dd-MM-yyyy", java.util.Locale.getDefault())
+        val sdfDateTime = java.text.SimpleDateFormat("dd-MM-yyyy HH:mm", java.util.Locale.getDefault())
+
+        val fromDate = sdfDate.format(java.util.Date(fromMillis))
+        val toDate = sdfDate.format(java.util.Date(toMillis))
+        val printTime = sdfDateTime.format(java.util.Date(printMillis))
+
+        val divider = "-".repeat(width)
+
+        return buildString {
+
+            append("\u001B\u0061\u0000")
+
+            // ✅ Outlet name
+            append(centerText(info.name, width) + "\n")
+            append(divider + "\n")
+
+            append("PRODUCT REPORT\n")
+            append(divider + "\n")
+
+            // ✅ Date range
+            append("From : $fromDate\n")
+            append("To   : $toDate\n")
+            append("Print: $printTime\n")
+
+            append(divider + "\n")
+
+            append("Product : $product\n")
+            append("Qty     : $qty\n")
+            append("Amount  : ₹${"%.2f".format(amount)}\n")
+
+            append(divider + "\n")
+            append(centerText("Thank You", width))
+            append("\n\n")
+        }
+    }
+
+
+    fun salesCategoryProductList(
+        category: String,
+        items: List<com.it10x.foodappgstav7_07.ui.reports.model.ProductReportItem>,
+        outletInfo: OutletInfo,
+        width: Int,
+        fromMillis: Long,
+        toMillis: Long,
+        printMillis: Long = System.currentTimeMillis()   // ✅ ADD THIS
+    ): String {
+
+        val divider = "-".repeat(width)
+
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+
+        fun line(label: String, value: String): String {
+            val safeLabel = label.take(width - value.length - 1)
+            val space = width - safeLabel.length - value.length
+            return safeLabel + " ".repeat(if (space > 0) space else 1) + value
+        }
+
+        val totalAmount = items.sumOf { it.total }
+
+        return buildString {
+
+            append("\u001B\u0061\u0001") // center align
+
+            // ✅ OUTLET NAME
+            append(outletInfo.name + "\n")
+
+            append(divider + "\n")
+
+            append("CATEGORY REPORT\n")
+            append(category.uppercase() + "\n")
+
+            append(divider + "\n")
+
+            // ✅ DATE RANGE
+            append("From : ${dateFormat.format(Date(fromMillis))}\n")
+            append("To   : ${dateFormat.format(Date(toMillis))}\n")
+
+            // ✅ PRINT TIME
+            append("Printed : ${dateFormat.format(Date(printMillis))}\n")
+
+            append(divider + "\n")
+
+            append("\u001B\u0061\u0000") // left align
+
+            if (items.isEmpty()) {
+                append("No data\n")
+            } else {
+
+                items.forEach { item ->
+
+                    append(item.name.take(width) + "\n")
+
+                    val rate = if (item.qty > 0) item.total / item.qty else 0.0
+                    val qtyRate = "${item.qty} x %.2f".format(rate)
+                    val totalStr = "%.2f".format(item.total)
+
+                    append(line(qtyRate, totalStr) + "\n")
+                    append("\n")
+                }
+            }
+
+            append(divider + "\n")
+            append(line("TOTAL", "%.2f".format(totalAmount)) + "\n")
+            append(divider + "\n\n")
+        }
+    }
+
+    fun totalSalesReport(
+        beforeDiscount: Double,
+        discount: Double,
+        afterDiscount: Double,
+        tax: Double,
+        info: OutletInfo,
+        width: Int,
+        fromMillis: Long,
+        toMillis: Long,
+        printMillis: Long
+    ): String {
+
+        val df = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+
+        return buildString {
+
+            appendLine(center(info.name, width))
+            appendLine("-".repeat(width))
+
+            appendLine(center("TOTAL SALES REPORT", width))
+            appendLine("-".repeat(width))
+
+            appendLine("From : ${df.format(Date(fromMillis))}")
+            appendLine("To   : ${df.format(Date(toMillis))}")
+            appendLine("Printed : ${df.format(Date(printMillis))}")
+
+            appendLine("-".repeat(width))
+
+            appendLine(leftRight("Before Discount", formatAmount(beforeDiscount), width))
+            appendLine(leftRight("Discount", formatAmount(discount), width))
+            appendLine(leftRight("After Discount", formatAmount(afterDiscount), width))
+            appendLine(leftRight("Tax", formatAmount(tax), width))
+
+            appendLine("-".repeat(width))
+            appendLine("\n\n")
+        }
+    }
+
+    fun center(text: String, width: Int): String {
+        val padding = (width - text.length) / 2
+        return if (padding > 0) {
+            " ".repeat(padding) + text
+        } else text
+    }
+    fun formatAmount(value: Double): String {
+        return "%.2f".format(value)
+    }
+    fun leftRight(left: String, right: String, width: Int): String {
+        val space = width - left.length - right.length
+        return if (space > 0) {
+            left + " ".repeat(space) + right
+        } else {
+            "$left $right" // fallback if overflow
+        }
+    }
+
+    fun totalSalesSummary(
+        before: Double,
+        discount: Double,
+        after: Double,
+        tax: Double,
+        info: OutletInfo,
+        width: Int,
+        fromMillis: Long,
+        toMillis: Long,
+        printMillis: Long
+    ): String {
+
+        val divider = "-".repeat(width)
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+
+        fun line(label: String, value: String): String {
+            val labelWidth = width / 2
+            return label.padEnd(labelWidth, ' ') + value
+        }
+
+        return buildString {
+
+            append(centerText(info.name, width) + "\n")
+            append(divider + "\n")
+
+            append(centerText("TOTAL SALES REPORT", width) + "\n")
+
+            append(divider + "\n")
+
+            append("From : ${dateFormat.format(Date(fromMillis))}\n")
+            append("To   : ${dateFormat.format(Date(toMillis))}\n")
+            append("Printed : ${dateFormat.format(Date(printMillis))}\n")
+
+            append(divider + "\n")
+
+            append(line("Before Discount", "%.2f".format(before)) + "\n")
+            append(line("Discount", "%.2f".format(discount)) + "\n")
+            append(line("After Discount", "%.2f".format(after)) + "\n")
+            append(line("Tax", "%.2f".format(tax)) + "\n")
+
+            append(divider + "\n\n")
+        }
+    }
+
+
+    fun salesFullReport(
+        state: SalesUiState,
+        info: OutletInfo,
+        width: Int,
+        printMillis: Long
+    ): String {
+
+        val df = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+
+        return buildString {
+
+            appendLine(centerText(info.name, width))
+            appendLine("-".repeat(width))
+
+            appendLine(centerText("SALES REPORT", width))
+            appendLine("-".repeat(width))
+
+            appendLine("From : ${df.format(Date(state.from))}")
+            appendLine("To   : ${df.format(Date(state.to))}")
+            appendLine("Printed : ${df.format(Date(printMillis))}")
+
+            appendLine("-".repeat(width))
+
+            // ---------------- SUMMARY ----------------
+            appendLine(centerText("SUMMARY", width))
+            appendLine("-".repeat(width))
+
+            appendLine(leftRight("Before Discount", formatAmount(state.totalBeforeDiscount), width))
+            appendLine(leftRight("Discount", formatAmount(state.discountTotal), width))
+            appendLine(leftRight("Total Sales", formatAmount(state.totalSales), width))
+            appendLine(leftRight("Tax", formatAmount(state.taxTotal), width))
+
+            appendLine("-".repeat(width))
+
+            appendLine(leftRight("Received", formatAmount(state.receivedTotal), width))
+            appendLine(leftRight("Credit", formatAmount(state.creditTotal), width))
+
+            appendLine("-".repeat(width))
+
+            // ---------------- PAYMENT ----------------
+            if (state.paymentBreakup.isNotEmpty()) {
+                appendLine(centerText("PAYMENT", width))
+                appendLine("-".repeat(width))
+
+                state.paymentBreakup.forEach { (type, amount) ->
+                    appendLine(leftRight(type, formatAmount(amount), width))
+                }
+
+                appendLine("-".repeat(width))
+            }
+
+            // ---------------- GROUPED ----------------
+            appendLine(centerText("GROUPED SALES", width))
+            appendLine("-".repeat(width))
+
+            appendLine(leftRight("Food", formatAmount(state.foodTotal), width))
+            appendLine(leftRight("Beverages", formatAmount(state.beveragesTotal), width))
+            appendLine(leftRight("Wine", formatAmount(state.wineTotal), width))
+
+            appendLine("-".repeat(width))
+
+            // ---------------- CATEGORY ----------------
+            if (state.categorySales.isNotEmpty()) {
+
+                appendLine(centerText("CATEGORY", width))
+                appendLine("-".repeat(width))
+
+                state.categorySales.forEach { (category, data) ->
+
+                    val qty = data.first
+                    val amount = data.second
+
+                    appendLine(category)
+                    appendLine(leftRight("Qty", qty.toString(), width))
+                    appendLine(leftRight("Amt", formatAmount(amount), width))
+                    appendLine("-".repeat(width))
+                }
+            }
+
+            append("\n\n")
+        }
+    }
+
+
+    fun categoryWiseSalesReport(
+        categorySales: Map<String, Pair<Int, Double>>,
+        info: OutletInfo,
+        width: Int,
+        fromMillis: Long,
+        toMillis: Long,
+        printMillis: Long
+    ): String {
+
+        val df = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+
+        return buildString {
+
+            appendLine(centerText(info.name, width))
+            appendLine("-".repeat(width))
+
+            appendLine(centerText("CATEGORY SALES REPORT", width))
+            appendLine("-".repeat(width))
+
+            appendLine("From : ${df.format(Date(fromMillis))}")
+            appendLine("To   : ${df.format(Date(toMillis))}")
+            appendLine("Printed : ${df.format(Date(printMillis))}")
+
+            appendLine("-".repeat(width))
+
+            categorySales.forEach { (category, data) ->
+                val qty = data.first
+                val amount = data.second
+
+                appendLine(category)
+                appendLine(leftRight("Qty", qty.toString(), width))
+                appendLine(leftRight("Amount", formatAmount(amount), width))
+                appendLine("-".repeat(width))
+            }
+
+            appendLine("\n\n")
+        }
+    }
 
 
 }
