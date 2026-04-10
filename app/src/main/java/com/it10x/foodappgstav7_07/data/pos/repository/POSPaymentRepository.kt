@@ -39,4 +39,9 @@ class POSPaymentRepository(
     suspend fun markSynced(paymentId: String, time: Long) {
         paymentDao.markSynced(paymentId, time)
     }
+
+    suspend fun getPaymentsByOrderId(orderId: String): List<PosOrderPaymentEntity> {
+        return paymentDao.getPaymentsByOrderId(orderId)
+    }
+
 }

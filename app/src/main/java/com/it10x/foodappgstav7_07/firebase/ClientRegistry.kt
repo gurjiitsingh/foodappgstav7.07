@@ -20,13 +20,23 @@ object ClientRegistry {
         applicationId = "1:694719081868:android:0834adbecfc0f833fbbaa9",
         projectId = "food-demo-d69f0"
     )
+    private val pizza_2345 = ClientFirebaseConfig(
+        apiKey = "AIzaSyDolKzzsSs9B_g7l7IzmzWRWaiV_kOprbc",
+        applicationId = "1:138279301903:android:d18b4d26bbad04ed3b047a",
+        projectId = "pizzeria-ee5e1"
+    )
+
+
+
+
 
     // Hardcode first 20 clients, later fetch from API
     // 🔑 PASSWORD == MAP KEY
     private val clients = mapOf(
         "pizzaitalia_2345" to pizzaitalia_2345,
         "grillhut_2345" to grillhut_2345,
-        "foodapp_2345" to foodapp_2345
+        "foodapp_2345" to foodapp_2345,
+        "pizza_2345" to pizza_2345
     )
 
     fun get(clientId: String): ClientFirebaseConfig {

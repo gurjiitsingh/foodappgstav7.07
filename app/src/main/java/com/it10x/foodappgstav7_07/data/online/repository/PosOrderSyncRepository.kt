@@ -14,16 +14,24 @@ import java.util.Date
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.Calendar
+import com.it10x.foodappgstav7_07.data.model.report.DailyTotals
+import com.it10x.foodappgstav7_07.data.pos.repository.POSPaymentRepository
+
+
+
 class PosOrderSyncRepository(
     private val orderMasterDao: OrderMasterDao,
     private val orderProductDao: OrderProductDao,
     private val outletDao: OutletDao,
-    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
+    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance(),
+    private val paymentRepository: POSPaymentRepository
 ) {
 
     suspend fun syncPendingOrders() = withContext(Dispatchers.IO) {
-        val dailyMap = mutableMapOf<String, Triple<Double, Double, Double>>()
-        val monthlyMap = mutableMapOf<String, Triple<Double, Double, Double>>()
+      //  val dailyMap = mutableMapOf<String, Triple<Double, Double, Double>>()
+        val dailyMap = mutableMapOf<String, DailyTotals>()
+        //val monthlyMap = mutableMapOf<String, Triple<Double, Double, Double>>()
+        val monthlyMap = mutableMapOf<String, DailyTotals>()
         val outlet = outletDao.getOutlet()
             ?: throw IllegalStateException("Outlet not configured")
 
@@ -60,32 +68,65 @@ class PosOrderSyncRepository(
             val discount = order.discountTotal ?: 0.0
             val tax = order.taxTotal ?: 0.0
 
-            val current = dailyMap[orderDate]
+            val payments = paymentRepository.getPaymentsByOrderId(order.id)
 
-            if (current == null) {
-                dailyMap[orderDate] = Triple(sales, discount, tax)
-            } else {
-                dailyMap[orderDate] = Triple(
-                    current.first + sales,
-                    current.second + discount,
-                    current.third + tax
-                )
-            }
+            var cash = 0.0
+            var upi = 0.0
+            var card = 0.0
+            var wallet = 0.0
+
+            payments
+                .filter { it.status == "SUCCESS" && !it.isVoided }
+                .forEach { payment ->
+                    when (payment.mode) {
+                        "CASH" -> cash += payment.amount
+                        "UPI" -> upi += payment.amount
+                        "CARD" -> card += payment.amount
+                        "WALLET" -> wallet += payment.amount
+                    }
+                }
+
+            val credit = order.dueAmount ?: 0.0
+
+
+
+            val totals = dailyMap.getOrPut(orderDate) { DailyTotals() }
+
+            totals.sales += sales.round2()
+            totals.discount += kotlin.math.abs(discount)
+            totals.sales += sales.round2()
+            totals.discount += kotlin.math.abs(discount).round2()
+            totals.tax += tax.round2()
+
+            totals.cash += cash.round2()
+            totals.upi += upi.round2()
+            totals.card += card.round2()
+            totals.wallet += wallet.round2()
+
+            totals.credit += credit.round2()
 
 // ✅ MONTHLY (FIXED POSITION)
-            val currentMonth = monthlyMap[orderMonth]
+            val monthTotals = monthlyMap.getOrPut(orderMonth) { DailyTotals() }
 
-            if (currentMonth == null) {
-                monthlyMap[orderMonth] = Triple(sales, discount, tax)
-            } else {
-                monthlyMap[orderMonth] = Triple(
-                    currentMonth.first + sales,
-                    currentMonth.second + discount,
-                    currentMonth.third + tax
-                )
+            monthTotals.sales += sales.round2()
+            monthTotals.discount += kotlin.math.abs(discount).round2()
+            monthTotals.tax += tax.round2()
+
+            monthTotals.cash += cash.round2()
+            monthTotals.upi += upi.round2()
+            monthTotals.card += card.round2()
+            monthTotals.wallet += wallet.round2()
+
+            monthTotals.credit += credit.round2()
+
+            val paymentType = when {
+                cash > 0 && upi == 0.0 && card == 0.0 && wallet == 0.0 -> "CASH"
+                upi > 0 && cash == 0.0 && card == 0.0 && wallet == 0.0 -> "UPI"
+                card > 0 && cash == 0.0 && upi == 0.0 && wallet == 0.0 -> "CARD"
+                wallet > 0 && cash == 0.0 && upi == 0.0 && card == 0.0 -> "WALLET"
+                else -> "MIXED"
             }
-
-
+            val totalQty = orderItems.sumOf { it.quantity }
             // -------- ORDER MASTER --------
             batch.set(orderRef, mapOf(
                 "id" to order.id,
@@ -98,7 +139,13 @@ class PosOrderSyncRepository(
                 "taxTotal" to order.taxTotal,
                 "discountTotal" to order.discountTotal,
                 "grandTotal" to order.grandTotal,
-                "paymentType" to order.paymentMode,
+                "dueAmount" to credit,
+                "totalItems" to totalQty,
+                "paymentType" to paymentType,
+                "cashAmount" to cash,
+                "upiAmount" to upi,
+                "cardAmount" to card,
+                "walletAmount" to wallet,
                 "paymentStatus" to order.paymentStatus,
                 "orderStatus" to order.orderStatus,
                 "source" to "POS",
@@ -196,10 +243,16 @@ class PosOrderSyncRepository(
                 mapOf(
                     "date" to date, // "2026-04-02" (for easy UI)
                     "dateTimestamp" to reportTimestamp, // 🔥 for queries
-                    "totalSales" to FieldValue.increment(totals.first),
-                    "totalDiscount" to FieldValue.increment(totals.second),
-                    "totalTax" to FieldValue.increment(totals.third),
-                    "lastUpdated" to FieldValue.serverTimestamp()
+                    "totalSales" to FieldValue.increment(totals.sales),
+                    "totalDiscount" to FieldValue.increment(totals.discount),
+                    "totalTax" to FieldValue.increment(totals.tax),
+
+                    "cashCollection" to FieldValue.increment(totals.cash),
+                    "upiCollection" to FieldValue.increment(totals.upi),
+                    "cardCollection" to FieldValue.increment(totals.card),
+                    "walletCollection" to FieldValue.increment(totals.wallet),
+
+                    "totalCredit" to FieldValue.increment(totals.credit),
                 ),
                 SetOptions.merge()
             )
@@ -222,9 +275,16 @@ class PosOrderSyncRepository(
                 docRef,
                 mapOf(
                     "month" to month,
-                    "totalSales" to FieldValue.increment(totals.first),
-                    "totalDiscount" to FieldValue.increment(totals.second),
-                    "totalTax" to FieldValue.increment(totals.third),
+                    "totalSales" to FieldValue.increment(totals.sales),
+                    "totalDiscount" to FieldValue.increment(totals.discount),
+                    "totalTax" to FieldValue.increment(totals.tax),
+
+                    "cashCollection" to FieldValue.increment(totals.cash),
+                    "upiCollection" to FieldValue.increment(totals.upi),
+                    "cardCollection" to FieldValue.increment(totals.card),
+                    "walletCollection" to FieldValue.increment(totals.wallet),
+
+                    "totalCredit" to FieldValue.increment(totals.credit),
                     "lastUpdated" to FieldValue.serverTimestamp()
                 ),
                 SetOptions.merge()
@@ -247,6 +307,9 @@ class PosOrderSyncRepository(
             Log.e("ORDER_SYNC", "Batch sync failed: ${e.message}", e)
             throw e
         }
+    }
+    fun Double.round2(): Double {
+        return String.format("%.2f", this).toDouble()
     }
 }
 

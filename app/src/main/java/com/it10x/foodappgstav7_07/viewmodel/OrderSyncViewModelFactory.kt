@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.it10x.foodappgstav7_07.data.pos.AppDatabaseProvider
 import com.it10x.foodappgstav7_07.data.online.models.repository.PosOrderSyncRepository
+import com.it10x.foodappgstav7_07.data.pos.repository.POSPaymentRepository
 
 class OrderSyncViewModelFactory(
     private val application: Application
@@ -14,11 +15,15 @@ class OrderSyncViewModelFactory(
         if (modelClass.isAssignableFrom(OrderSyncViewModel::class.java)) {
 
             val db = AppDatabaseProvider.get(application)
+            val paymentRepository = POSPaymentRepository(
+                db.posOrderPaymentDao()
+            )
 
             val repository = PosOrderSyncRepository(
                 orderMasterDao = db.orderMasterDao(),
                 orderProductDao = db.orderProductDao(),
-                outletDao = db.outletDao()
+                outletDao = db.outletDao(),
+                paymentRepository = paymentRepository
             )
 
             @Suppress("UNCHECKED_CAST")

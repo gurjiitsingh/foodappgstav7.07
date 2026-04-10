@@ -83,6 +83,10 @@ interface PosOrderPaymentDao {
         WHERE id = :paymentId
     """)
     suspend fun voidPayment(paymentId: String)
+
+
+    @Query("SELECT * FROM pos_order_payments WHERE orderId = :orderId")
+    suspend fun getPaymentsByOrderId(orderId: String): List<PosOrderPaymentEntity>
 }
 
 
