@@ -40,7 +40,8 @@ fun LocalOrderDetailScreen(
     val due by viewModel.dueAmount.collectAsState()
     val status by viewModel.paymentStatus.collectAsState()
 
-
+    val deliveryFee by viewModel.deliveryFee.collectAsState()
+    val deliveryTax by viewModel.deliveryTax.collectAsState()
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -87,6 +88,8 @@ fun LocalOrderDetailScreen(
             OrderTotals(
                 subtotal = subtotal,
                 tax = tax,
+                deliveryFee = deliveryFee,
+                deliveryTax = deliveryTax,
                 discount = discount,
                 grandTotal = grandTotal,
                 totalPaid = totalPaid,
@@ -202,6 +205,8 @@ private fun rememberDateFormatter(): SimpleDateFormat {
 fun OrderTotals(
     subtotal: Double,
     tax: Double,
+    deliveryFee: Double,
+    deliveryTax: Double,
     discount: Double,
     grandTotal: Double,
     totalPaid: Double,        // <-- new
@@ -211,19 +216,23 @@ fun OrderTotals(
 ) {
 
     Column {
+
+
         TotalRow("Subtotal", subtotal)
-        TotalRow("GST", tax)
+        TotalRow("Tax", tax)
+
+        // ✅ NEW: Delivery Fee
+        if (deliveryFee > 0) {
+            TotalRow("Delivery Fee", deliveryFee)
+        }
+
+        // ✅ NEW: Delivery Tax
+        if (deliveryTax > 0) {
+            TotalRow("Delivery Tax", deliveryTax)
+        }
 
         if (discount > 0) {
             TotalRow("Discount", -discount)
-        }
-
-        if (totalPaid > 0) {
-            TotalRow("Paid Amount", totalPaid)
-        }
-
-        if (due > 0) {
-            TotalRow("Due Amount", due)
         }
 
         Text(

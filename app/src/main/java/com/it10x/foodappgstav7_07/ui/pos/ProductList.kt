@@ -1,5 +1,6 @@
 package com.it10x.foodappgstav7_07.ui.pos
 
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -35,14 +36,25 @@ fun ProductList(
 
 
     val sessionId by posSessionViewModel.sessionId.collectAsState()
-//    val sortedProducts = remember(filteredProducts) {
-//        filteredProducts
-//            .filter { it.type == "parent" } // ✅ only parent products
-//            .sortedBy { it.sortOrder }
-//    }
     val sortedProducts = remember(filteredProducts) {
-        filteredProducts.sortedBy { it.sortOrder }
+        filteredProducts
+            .filter { it.type == "parent" } // ✅ only parent products
+            .sortedBy { it.sortOrder }
     }
+//    val sortedProducts = remember(filteredProducts) {
+//        filteredProducts.sortedBy { it.sortOrder }
+//    }
+
+//    LaunchedEffect(filteredProducts) {
+//        Log.d("POS_DEBUG", "Total products: ${filteredProducts.size}")
+//
+//        filteredProducts.forEach {
+//            Log.d(
+//                "POS_DEBUG",
+//                "ID=${it.id}, name=${it.name}, type='${it.type}', sortOrder=${it.sortOrder}"
+//            )
+//        }
+//    }
 
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = 160.dp),

@@ -47,7 +47,9 @@ data class PosOrderMasterEntity(
     // AMOUNTS (FINAL VALUES ONLY)
     // =====================================================
     val deliveryFee: Double = 0.0,
+    val deliveryTax: Double = 0.0,
     val itemTotal: Double,          // Sum of items before tax
+    val itemTax: Double = 0.0,
     val taxTotal: Double,           // Total tax
     val discountTotal: Double,      // Manual / item discount
     val grandTotal: Double,         // Final payable amount

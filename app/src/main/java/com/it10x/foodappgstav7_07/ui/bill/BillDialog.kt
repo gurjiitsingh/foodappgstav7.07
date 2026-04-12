@@ -48,6 +48,8 @@ fun BillDialog(
     val creditAmount = remember { mutableStateOf("") }
     var showRemainingOptions by remember { mutableStateOf(false) }
     var showDiscount by remember { mutableStateOf(false) }
+    var showDelivery by remember { mutableStateOf(false) }
+    val deliveryFee = remember { mutableStateOf("") }
     var isProcessing by remember { mutableStateOf(false) }
 
     val usedPaymentModes = remember { mutableStateListOf<String>() }
@@ -85,19 +87,27 @@ fun BillDialog(
     LaunchedEffect(showBill) {
         if (showBill) {
 
+            // Discount (already correct)
             if (uiState.value.discountFlat > 0) {
                 discountFlat.value = uiState.value.discountFlat.toString()
                 discountPercent.value = ""
                 showDiscount = true
-            }
-            else if (uiState.value.discountPercent > 0) {
+            } else if (uiState.value.discountPercent > 0) {
                 discountPercent.value = uiState.value.discountPercent.toString()
                 discountFlat.value = ""
                 showDiscount = true
-            }
-            else {
+            } else {
                 discountFlat.value = ""
                 discountPercent.value = ""
+            }
+
+            // ✅ ADD THIS BLOCK
+            if (uiState.value.deliveryFee > 0) {
+                deliveryFee.value = uiState.value.deliveryFee.toString()
+                showDelivery = true
+            } else {
+                deliveryFee.value = ""
+                showDelivery = false
             }
         }
     }
@@ -399,6 +409,94 @@ fun BillDialog(
                         }
 
                     }
+
+
+
+                    // ---------------- DELIVERY TOGGLE ----------------
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+
+                        Text(
+                            text = "Enable Delivery Charges",
+                            fontSize = 14.sp,
+                            color = Color.LightGray,
+                            fontWeight = FontWeight.Medium
+                        )
+
+                        Switch(
+                            checked = showDelivery,
+                            onCheckedChange = {
+                                showDelivery = it
+                            },
+                        )
+                    }
+
+
+
+// ---------------- DELIVERY INPUT ----------------
+
+                    if (showDelivery) {
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 4.dp)
+                        ) {
+
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable {
+                                        activeInput = "DELIVERY"
+                                    }
+                            ) {
+                                OutlinedTextField(
+                                    value = deliveryFee.value,
+                                    onValueChange = {},
+                                    label = { Text("Delivery ₹") },
+                                    readOnly = true,
+                                    enabled = false,
+                                    singleLine = true,
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        disabledContainerColor =
+                                            if (activeInput == "DELIVERY") Color(0xFF1E2A22)
+                                            else Color(0xFF2A2A2A),
+
+                                        disabledBorderColor =
+                                            if (activeInput == "DELIVERY") Color(0xFF0288D1)
+                                            else Color.Gray,
+
+                                        disabledTextColor = Color.White,
+                                        disabledLabelColor = Color.LightGray
+                                    ),
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+
+                            TextButton(
+                                onClick = {
+                                    deliveryFee.value = ""
+                                    activeInput = null
+
+                                    // ✅ IMPORTANT: reset ViewModel state
+                                    billViewModel.setDeliveryFee(0.0)
+                                }
+                            ) {
+                                Text("❌")
+                            }
+                        }
+                    }
+
+
+
+
+
 
 
 
@@ -804,6 +902,7 @@ fun BillDialog(
                             discountFlat = discountFlat,
                             discountPercent = discountPercent,
                             creditAmount = creditAmount,
+                            deliveryFee = deliveryFee,
                             billViewModel = billViewModel
                         )
                     }
@@ -834,6 +933,7 @@ fun handleInput(
     discountFlat: MutableState<String>,
     discountPercent: MutableState<String>,
     creditAmount: MutableState<String>,
+    deliveryFee: MutableState<String>,
     billViewModel: BillViewModel
 ){
     when (activeInput) {
@@ -905,12 +1005,16 @@ fun handleInput(
         "CREDIT" -> {
             creditAmount.value = handleNumberInput(creditAmount.value, label)
         }
-//        "CREDIT" -> {
-//            when (label) {
-//                "←" -> creditAmount.value = creditAmount.value.dropLast(1)
-//                else -> creditAmount.value += label
-//            }
-//        }
+
+        "DELIVERY" -> {
+            deliveryFee.value = handleNumberInput(deliveryFee.value, label)
+
+            // ✅ SEND TO VIEWMODEL (REAL-TIME)
+            billViewModel.setDeliveryFee(
+                deliveryFee.value.toDoubleOrNull() ?: 0.0
+            )
+        }
+
 
     }
 }

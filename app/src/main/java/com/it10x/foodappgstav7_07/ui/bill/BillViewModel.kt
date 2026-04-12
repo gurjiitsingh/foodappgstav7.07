@@ -98,6 +98,9 @@ class BillViewModel(
     val currencySymbol: StateFlow<String> = _currencySymbol
 
     private val _discountFlat = MutableStateFlow(0.0)
+
+    private val _deliveryFee = MutableStateFlow(0.0)
+    private val _deliveryTaxPercent = MutableStateFlow(0.0)
     private val _discountPercent = MutableStateFlow(0.0)
 
     private val _customerSuggestions = MutableStateFlow<List<PosCustomerEntity>>(emptyList())
@@ -148,7 +151,13 @@ class BillViewModel(
     }
 
 
+    fun setDeliveryFee(value: Double) {
+        _deliveryFee.value = value.coerceAtLeast(0.0)
+    }
 
+    fun setDeliveryTaxPercent(value: Double) {
+        _deliveryTaxPercent.value = value.coerceAtLeast(0.0)
+    }
 
     // ✅ FINAL remaining flow (AUTO updates)
     val remainingPaise: StateFlow<Long> =
@@ -207,12 +216,10 @@ class BillViewModel(
         get() = orderType
 
     init {
-
-
-
+        resetBillUi()
         observeBill()
         loadCurrency()
-
+        setDeliveryTaxPercent(5.0)
     }
 
 
@@ -225,10 +232,20 @@ class BillViewModel(
             combine(
                 kotItemDao.getItemsForTable(tableId),
                 _discountFlat,
-                _discountPercent
-            ) { kotItems, flat, percent ->
-                Triple(kotItems, flat, percent)
-            }.collectLatest { (kotItems, flat, percent) ->
+                _discountPercent,
+                _deliveryFee,
+                _deliveryTaxPercent
+            ) { kotItems, flat, percent, deliveryFeeFlow, deliveryTaxPercentFlow ->
+
+                // return all values as one object
+                BillCombine(
+                    kotItems,
+                    flat,
+                    percent,
+                    deliveryFeeFlow,
+                    deliveryTaxPercentFlow
+                )
+            }.collectLatest { (kotItems, flat, percent, deliveryFeeFlow, deliveryTaxPercentFlow) ->
 
                 val doneItems = kotItems.filter { it.status == "DONE" }
 
@@ -267,53 +284,73 @@ class BillViewModel(
                             note = first.note ?: "",
                             modifiersJson = first.modifiersJson ?: ""
                         )
-
                     }
-
-
-
-
 
                 val subtotal = billingItems.sumOf { it.itemtotal }
                 val totalTax = billingItems.sumOf { it.taxTotal }
 
                 val percentValue = subtotal * (percent / 100.0)
                 val discount = if (flat > 0) flat else percentValue
-
                 val safeDiscount = discount.coerceAtMost(subtotal)
 
                 val taxAfterDiscount =
                     if (subtotal == 0.0) 0.0
                     else totalTax * (1 - safeDiscount / subtotal)
 
-                val finalTotal = (subtotal - safeDiscount) + taxAfterDiscount
+                // ✅ Delivery values from Flow
+                val deliveryFee = deliveryFeeFlow
+                val deliveryTax = deliveryFee * (deliveryTaxPercentFlow / 100.0)
+
+                val finalTotal =
+                    (subtotal - safeDiscount) +
+                            taxAfterDiscount +
+                            deliveryFee +
+                            deliveryTax
 
                 _uiState.update { old ->
-
                     old.copy(
                         loading = false,
                         items = billingItems,
                         subtotal = subtotal,
-                        tax = taxAfterDiscount,
+                        deliveryFee = deliveryFee,
+                        deliveryTax = deliveryTax,
+                        tax = taxAfterDiscount, // ✅ ONLY item tax
                         discountFlat = flat,
                         discountPercent = percent,
                         discountApplied = safeDiscount,
                         total = finalTotal
                     )
                 }
-
             }
         }
     }
 
     override fun onCleared() {
         super.onCleared()
-
+        resetBillUi()
     }
+
+//    fun resetBillUi() {
+//        _discountFlat.value = 0.0
+//        _discountPercent.value = 0.0
+//
+//        _uiState.update {
+//            it.copy(
+//                customerPhone = ""
+//            )
+//        }
+//    }
 
     fun resetBillUi() {
         _discountFlat.value = 0.0
         _discountPercent.value = 0.0
+
+        _deliveryFee.value = 0.0
+        _deliveryTaxPercent.value = 5.0   // or 0.0 if you want
+
+        _creditPaise.value = 0L
+
+        _deliveryAddress.value = null
 
         _uiState.update {
             it.copy(
@@ -424,8 +461,16 @@ class BillViewModel(
             )
 
 
+                val deliveryFeePaise = MoneyUtils.toPaise(_deliveryFee.value)
+                val deliveryTaxPaise =
+                    (deliveryFeePaise * _deliveryTaxPercent.value / 100.0).roundToLong()
+                val totalTaxPaise = taxAfterDiscountPaise + deliveryTaxPaise
                 val grandTotalPaise =
-                    itemSubtotalPaise - safeDiscountPaise + taxAfterDiscountPaise
+                    itemSubtotalPaise -
+                            safeDiscountPaise +
+                            totalTaxPaise +
+                            deliveryFeePaise
+
             // ===========================
             // PAYMENT CALCULATION
             // ===========================
@@ -586,7 +631,10 @@ class BillViewModel(
                 itemTotal = MoneyUtils.fromPaise(itemSubtotalPaise),
 
                //taxTotal = MoneyUtils.fromPaise(taxTotalPaise),
-                taxTotal = MoneyUtils.fromPaise(taxAfterDiscountPaise),
+                deliveryFee = _deliveryFee.value,
+                deliveryTax = ( _deliveryFee.value * _deliveryTaxPercent.value / 100.0 ),
+                itemTax = MoneyUtils.fromPaise(taxAfterDiscountPaise),
+                taxTotal = MoneyUtils.fromPaise(totalTaxPaise),
                 discountTotal = MoneyUtils.fromPaise(safeDiscountPaise),
               //  grandTotal = grandTotal,
                 grandTotal = MoneyUtils.fromPaise(grandTotalPaise),
@@ -931,3 +979,10 @@ class BillViewModel(
     }
 
 }
+data class BillCombine(
+    val items: List<PosKotItemEntity>,
+    val flat: Double,
+    val percent: Double,
+    val deliveryFee: Double,
+    val deliveryTaxPercent: Double
+)

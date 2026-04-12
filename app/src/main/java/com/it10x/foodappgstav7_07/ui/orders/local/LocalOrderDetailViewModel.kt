@@ -48,6 +48,15 @@ class LocalOrderDetailViewModel(
         .map { it?.dueAmount ?: 0.0 }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0.0)
 
+    val deliveryFee = orderInfo
+        .map { it?.deliveryFee ?: 0.0 }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0.0)
+
+    val deliveryTax = orderInfo
+        .map { it?.deliveryTax ?: 0.0 }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0.0)
+
+
     val paymentStatus = combine(totalPaid, dueAmount) { paid, due ->
         when {
             paid == 0.0 -> "CREDIT"

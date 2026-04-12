@@ -150,41 +150,40 @@ class WaiterBillViewModel(
                             note = first.note ?: "",
                             modifiersJson = first.modifiersJson ?: ""
                         )
-
                     }
-
-
 
                 val subtotal = billingItems.sumOf { it.itemtotal }
                 val totalTax = billingItems.sumOf { it.taxTotal }
 
                 val percentValue = subtotal * (percent / 100.0)
                 val discount = if (flat > 0) flat else percentValue
-
                 val safeDiscount = discount.coerceAtMost(subtotal)
 
                 val taxAfterDiscount =
                     if (subtotal == 0.0) 0.0
                     else totalTax * (1 - safeDiscount / subtotal)
 
-                val finalTotal = (subtotal - safeDiscount) + taxAfterDiscount
+                // ✅ DELIVERY ALWAYS 0 IN WAITER FLOW
+                val deliveryBase = 0.0
+                val deliveryTax = 0.0
+
+                val finalTotal =
+                    (subtotal - safeDiscount) + taxAfterDiscount
 
                 _uiState.update { old ->
-
                     old.copy(
                         loading = false,
                         items = billingItems,
                         subtotal = subtotal,
                         tax = taxAfterDiscount,
+                        deliveryFee = deliveryBase,
+                        deliveryTax = deliveryTax,
                         discountFlat = flat,
                         discountPercent = percent,
                         discountApplied = safeDiscount,
                         total = finalTotal
                     )
                 }
-
-
-
             }
         }
     }
